@@ -1,0 +1,45 @@
+# environment
+env: ReacherPyBulletEnv-v0 #XarmReach-v1
+seed: 0
+
+# buffer
+buffer_size: 4096
+
+# network
+hidden_sizes: [64, 64]
+
+# train
+lr: 3.0e-4
+epoch: 100
+step_per_epoch: 30000
+step_per_collect: 2048 # the number of transitions the collector would collect before the network update
+batch_size: 64
+repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
+
+# parallel
+device: cuda # cuda
+training_num: 64 # 64
+test_num: 10 # 10
+
+# PPO
+rew_norm: True
+vf_coef: 0.25 # [Q] weight for value loss
+ent_coef: 0.0 # [Q] weight for entropy loss
+gamma: 0.99
+gae_lambda: 0.95
+bound_action_method: clip
+lr_decay: True
+max_grad_norm: 0.5
+eps_clip: 0.2 
+dual_clip: null # [Q]
+value_clip: 0 # [Q]
+norm_adv: 0 # [Q]
+recompute_adv: 1 # [Q]
+
+# dir
+logdir: log
+resume_path: null
+
+# render
+watch_train: False # if show demo directly
+render: 0. # render time rate
