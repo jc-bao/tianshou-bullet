@@ -1,5 +1,5 @@
 # environment
-env: XarmReach-v1
+env: NaiveReach-v0 # XarmReach-v1
 seed: 0
 
 # buffer
@@ -17,12 +17,12 @@ batch_size: 64
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
 
 # parallel
-device: cuda # cuda
-training_num: 64 # 64
-test_num: 10 # 10
+device: cpu # cuda
+training_num: 8 # 64
+test_num: 1 # 10
 
 # PPO
-rew_norm: True
+rew_norm: False # [TBD] not found in others implementation
 vf_coef: 0.25 # [Q] weight for value loss
 ent_coef: 0.0 # [Q] weight for entropy loss
 gamma: 0.99

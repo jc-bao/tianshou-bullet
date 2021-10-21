@@ -1,6 +1,7 @@
 import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
+import test_env.naive_reach
 
 import torch
 from torch import nn
@@ -34,8 +35,7 @@ if __name__ == '__main__':
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
-    # train_envs = SubprocVectorEnv(
-    train_envs = DummyVectorEnv(
+    train_envs = SubprocVectorEnv(
         [lambda: gym.make(config['env']) for _ in range(config['training_num'])],
         norm_obs = True
     )
