@@ -1,4 +1,4 @@
-import gym_xarm, yaml, gym
+import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
 
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config_handover.yaml", "r") as stream:
+    with open("config/ppo_bullet.yaml", "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -135,5 +135,5 @@ if __name__ == '__main__':
     '''
     policy.eval()
     test_collector.reset()
-    result = test_collector.collect(n_episode=config['test_num'], render=config['render'])
+    result = test_collector.collect(n_episode=config['test_num'], render=0.1)
     print(f'Final reward: {result["rews"].mean()}, length: {result["lens"].mean()}')
