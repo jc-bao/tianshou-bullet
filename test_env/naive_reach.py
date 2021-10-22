@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 import time
 
+from numpy.core import einsumfunc
+
 class NaiveReach(gym.Env):
     def __init__(self, reward_type='dense_diff', dim = 2):
         self.dim = dim
@@ -45,17 +47,20 @@ class NaiveReach(gym.Env):
 
     def render(self):
         if self.num_step == 1:
-            # self.fig = plt.figure()
-            # self.ax = self.fig.add_subplot()
-            self.x = [self.pos[0]]
-            self.y = [self.pos[1]]
-        self.x.append(self.pos[0])
-        self.y.append(self.pos[1])
+            self.data = [self.pos]
+        self.data.append(self.pos)
         if self.num_step == self._max_episode_steps or (np.linalg.norm(self.pos - self.goal))<0.05:
-            for i in range(len(self.x)):
-                plt.plot(self.x[i], self.y[i], 'o', color = [0,0,1,i/50])
-            plt.plot(self.goal[0], self.goal[1], 'rx')
-            plt.show()
+            if self.dim == 2:
+                for i,d in enumerate(self.data):
+                    plt.plot(d[0], d[1], 'o', color = [0,0,1,i/50])
+                plt.plot(self.goal[0], self.goal[1], 'rx')
+                plt.show()
+            elif self.dim == 3:
+                fig = plt.figure()
+                ax = fig.add_subplot(projection='3d')
+                for i,d in enumerate(self.data):
+                    ax.scatter(d[0], d[1], d[2], 'o', color = [0,0,1,i/50])
+                plt.show()
             '''
             fig = plt.figure()
             ax = fig.add_subplot()
