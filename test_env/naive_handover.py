@@ -38,7 +38,7 @@ class NaiveHandover(gym.Env):
         self.num_step += 1
         self.if_grasp = (action[-1] < 0) and self.d_a2o < 0.05
         action = np.clip(action, self.action_space.low, self.action_space.high)
-        self.pos = np.clip(self.pos + action[:self.dim] * 0.10, self.space.low, self.space.high)
+        self.pos = np.clip(self.pos + action[:self.dim] * 0.20, self.space.low, self.space.high)
         if self.if_grasp:
             self.obj = self.pos
         self.d_o2g = np.linalg.norm(self.obj - self.goal)

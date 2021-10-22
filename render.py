@@ -1,7 +1,7 @@
 import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
-import test_env.naive_reach
+from test_env import naive_reach, naive_pac
 
 import torch
 from torch import nn
@@ -31,13 +31,13 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.make(config['env'], reward_type = config['reward_type'])
+    env = gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode'])
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     env.close()
     test_envs = DummyVectorEnv(
-        [lambda: gym.make(config['env'], reward_type = config['reward_type'])],
+        [lambda: gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode'])],
         norm_obs = True,
         update_obs_rms = False
     )
