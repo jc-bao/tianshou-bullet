@@ -31,16 +31,16 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.make(config['env'])
+    env = gym.make(config['env'], reward_type = config['reward_type'])
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     train_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env']) for _ in range(config['training_num'])],
+        [lambda: gym.make(config['env'], reward_type = config['reward_type']) for _ in range(config['training_num'])],
         norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env']) for _ in range(config['test_num'])],
+        [lambda: gym.make(config['env'], reward_type = config['reward_type']) for _ in range(config['test_num'])],
         norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
@@ -53,6 +53,8 @@ if __name__ == '__main__':
     '''
     build and init network
     '''
+    if not (torch.cuda.is_available()):
+        config['device'] = 'cpu'
     net_a = Net(
         state_shape,
         hidden_sizes=config['hidden_sizes'],

@@ -1,5 +1,6 @@
 # environment
 env: NaiveReach-v0 # XarmReach-v1
+reward_type: dense
 seed: 0
 
 # buffer
@@ -17,7 +18,7 @@ batch_size: 64
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
 
 # parallel
-device: cpu # cuda
+device: cuda # cuda
 training_num: 8 # 64
 test_num: 1 # 10
 
