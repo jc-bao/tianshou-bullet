@@ -38,7 +38,7 @@ recompute_adv: 1 # [Q]
 
 # dir
 logdir: log
-resume_path: null
+resume_path: null #/Users/reedpan/Desktop/Research/tianshou_bullet/log/NaiveReach-v0/ppo/seed_0_1021_213641_NaiveReach-v0_ppo/policy.pth
 
 # render
 watch_train: False # if show demo directly

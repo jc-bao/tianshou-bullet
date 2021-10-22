@@ -1,6 +1,7 @@
 import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
+import test_env.naive_reach
 
 import torch
 from torch import nn
@@ -135,5 +136,5 @@ if __name__ == '__main__':
     '''
     policy.eval()
     test_collector.reset()
-    result = test_collector.collect(n_episode=config['test_num'], render=0.1)
+    result = test_collector.collect(n_episode=config['test_num'], render=0.00001)
     print(f'Final reward: {result["rews"].mean()}, length: {result["lens"].mean()}')

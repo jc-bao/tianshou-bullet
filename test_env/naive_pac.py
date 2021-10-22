@@ -3,16 +3,12 @@ from gym import spaces
 import numpy as np
 import logging
 from gym.envs.registration import register
-import matplotlib.pyplot as plt
-from matplotlib import animation
-import time
 
-class NaiveReach(gym.Env):
-    def __init__(self, reward_type='dense_diff', dim = 2):
-        self.dim = dim
+class NaivePickAndPlace(gym.Env):
+    def __init__(self, reward_type='dense'):
         self.reward_type = reward_type
         self._max_episode_steps = 50
-        self.space = spaces.Box(low=-np.array(np.ones(dim)), high=np.ones(dim))
+        self.space = spaces.Box(low=np.array([0,0]), high=np.array([1,1]))
         self.observation_space = self.space
         self.action_space = self.space
         self.reset()
@@ -43,30 +39,7 @@ class NaiveReach(gym.Env):
         self.d_old = np.linalg.norm(self.pos - self.goal)
         return self.pos
 
-    def render(self):
-        if self.num_step == 1:
-            # self.fig = plt.figure()
-            # self.ax = self.fig.add_subplot()
-            self.x = [self.pos[0]]
-            self.y = [self.pos[1]]
-        self.x.append(self.pos[0])
-        self.y.append(self.pos[1])
-        if self.num_step == self._max_episode_steps:
-            print(self.x, self.y)
-            for i in range(len(self.x)):
-                plt.plot(self.x[i], self.y[i], 'o', color = [0,0,1,i/50])
-            plt.plot(self.goal[0], self.goal[1], 'rx')
-            plt.show()
-            '''
-            fig = plt.figure()
-            ax = fig.add_subplot()
-            point, = ax.plot([self.x[0]], [self.y[0]], 'o')
-            def update_point(n, x, y, point):
-                point.set_data(np.array([self.x[n], self.y[n]]))
-                return point
-            ani=animation.FuncAnimation(fig, func = update_point, frames = 49, interval = 1/30, fargs=(self.x, self.y, point))
-            '''
-
+# logger = logging.getLogger(__name__)
 register(
     id='NaiveReach-v0',
     entry_point='test_env.naive_reach:NaiveReach',
