@@ -20,7 +20,7 @@ class NaiveReach(gym.Env):
     def step(self, action):
         self.num_step += 1
         action = np.clip(action, self.action_space.low, self.action_space.high)
-        self.pos = np.clip(self.pos + action * 0.30, self.space.low, self.space.high)
+        self.pos = np.clip(self.pos + action * 0.20, self.space.low, self.space.high)
         obs = np.concatenate((self.pos, self.goal)) 
         d = np.linalg.norm(self.pos - self.goal)
         if self.reward_type == 'dense':
@@ -41,7 +41,7 @@ class NaiveReach(gym.Env):
         self.goal = self.space.sample()
         self.pos = self.space.sample()
         self.d_old = np.linalg.norm(self.pos - self.goal)
-        return self.pos
+        return np.concatenate((self.pos, self.goal)) 
 
     def render(self):
         if self.num_step == 1:
@@ -51,7 +51,7 @@ class NaiveReach(gym.Env):
             self.y = [self.pos[1]]
         self.x.append(self.pos[0])
         self.y.append(self.pos[1])
-        if self.num_step == self._max_episode_steps:
+        if self.num_step == self._max_episode_steps or (np.linalg.norm(self.pos - self.goal))<0.05:
             for i in range(len(self.x)):
                 plt.plot(self.x[i], self.y[i], 'o', color = [0,0,1,i/50])
             plt.plot(self.goal[0], self.goal[1], 'rx')
@@ -67,20 +67,15 @@ class NaiveReach(gym.Env):
             '''
 
     def ezpolicy(self, obs):
-        return obs[:self.dim] - self.goal[self.dim:]
+        return obs[self.dim:] - obs[:self.dim]
 
 register(
     id='NaiveReach-v0',
-    entry_point='test_env:naive_reach:NaiveReach',
+    entry_point='test_env.naive_reach:NaiveReach',
 )
 
 if __name__ == '__main__':
-    register(
-        id='NaiveReach-v0',
-        entry_point='naive_reach:NaiveReach',
-    )
-    print('Running ezpolicy...')
-    env = gym.make('NaiveReach-v0')
+    env = NaiveReach()
     obs = env.reset()
     for i in range(50):
         act = env.ezpolicy(obs)

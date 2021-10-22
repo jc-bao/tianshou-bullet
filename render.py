@@ -138,5 +138,5 @@ if __name__ == '__main__':
     '''
     policy.eval()
     test_collector.reset()
-    result = test_collector.collect(n_episode=config['test_num'], render=0.000001)
+    result = test_collector.collect(n_episode=10, render=0.000001)
     print(f'Final reward: {result["rews"].mean()}, length: {result["lens"].mean()}')
