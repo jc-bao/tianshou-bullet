@@ -13,7 +13,7 @@ class NaivePickAndPlace(gym.Env):
         self.reward_type = reward_type
         self._max_episode_steps = 50
         self.space = spaces.Box(low=-np.ones(dim), high=np.ones(dim))
-        self.observation_space = spaces.Box(low=-np.ones(dim*2), high=np.ones(dim*2))
+        self.observation_space = spaces.Box(low=-np.ones(dim*3), high=np.ones(dim*3))
         self.action_space = spaces.Box(low=-np.ones(dim+1), high=np.ones(dim+1))
         self.reset()
 

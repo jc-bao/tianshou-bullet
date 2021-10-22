@@ -1,7 +1,7 @@
 import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
-import test_env.naive_reach
+from test_env import naive_reach, naive_pac
 
 import torch
 from torch import nn
