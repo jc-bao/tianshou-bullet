@@ -15,7 +15,7 @@ from tianshou.utils.net.common import Net
 from tianshou.utils import TensorboardLogger
 from tianshou.policy import PPOPolicy
 from tianshou.trainer import onpolicy_trainer
-from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer
+from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer, Batch
 
 # Note: do not remove __main__ as it will use multi-process
 if __name__ == '__main__':
@@ -31,16 +31,16 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.make(config['env'], reward_type = config['reward_type'])
+    env = gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode'])
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     train_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env'], reward_type = config['reward_type']) for _ in range(config['training_num'])],
+        [lambda: gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode']) for _ in range(config['training_num'])],
         norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env'], reward_type = config['reward_type']) for _ in range(config['test_num'])],
+        [lambda: gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode']) for _ in range(config['test_num'])],
         norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
@@ -156,6 +156,18 @@ if __name__ == '__main__':
     # save function
     def save_fn(policy):
         torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
+        # save render data
+        obs = env.reset()
+        done = False
+        while not done:
+            data = Batch(
+                obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
+            )
+            with torch.no_grad():  # faster than retain_grad version
+                result = policy(data, None)
+            action_remap = policy.map_action(result.act)
+            obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
+            env.render(mode = 'save', save_path = log_path)
 
     '''
     trainer

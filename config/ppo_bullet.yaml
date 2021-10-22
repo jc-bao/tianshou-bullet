@@ -1,6 +1,9 @@
 # environment
 env: NaivePickAndPlace-v0 # XarmReach-v1
 reward_type: dense
+mode: static
+error: 0.05
+dim: 2
 seed: 0
 
 # buffer
@@ -19,8 +22,8 @@ repeat_per_collect: 10 # the number of repeat time for policy learning for each 
 
 # parallel
 device: cuda # cuda
-training_num: 1 # 64
-test_num: 1 # 10
+training_num: 64
+test_num: 10
 
 # PPO
 rew_norm: False # [TBD] not found in others implementation
