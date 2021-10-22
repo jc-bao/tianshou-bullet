@@ -19,8 +19,8 @@ repeat_per_collect: 10 # the number of repeat time for policy learning for each 
 
 # parallel
 device: cuda # cuda
-training_num: 8 # 64
-test_num: 10 # 10
+training_num: 1 # 64
+test_num: 1 # 10
 
 # PPO
 rew_norm: False # [TBD] not found in others implementation
