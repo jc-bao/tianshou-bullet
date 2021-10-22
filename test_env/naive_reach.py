@@ -12,7 +12,7 @@ class NaiveReach(gym.Env):
         self.dim = dim
         self.reward_type = reward_type
         self._max_episode_steps = 50
-        self.space = spaces.Box(low=-np.array(np.ones(dim)), high=np.ones(dim))
+        self.space = spaces.Box(low=-np.ones(dim), high=np.ones(dim))
         self.observation_space = self.space
         self.action_space = self.space
         self.reset()
@@ -20,7 +20,7 @@ class NaiveReach(gym.Env):
     def step(self, action):
         self.num_step += 1
         action = np.clip(action, self.space.low, self.space.high)
-        self.pos += np.clip(action * 0.10, self.space.low, self.space.high)
+        self.pos = np.clip(self.pos + action * 0.30, self.space.low, self.space.high)
         obs = self.pos
         d = np.linalg.norm(self.pos - self.goal)
         if self.reward_type == 'dense':
@@ -52,7 +52,6 @@ class NaiveReach(gym.Env):
         self.x.append(self.pos[0])
         self.y.append(self.pos[1])
         if self.num_step == self._max_episode_steps:
-            print(self.x, self.y)
             for i in range(len(self.x)):
                 plt.plot(self.x[i], self.y[i], 'o', color = [0,0,1,i/50])
             plt.plot(self.goal[0], self.goal[1], 'rx')

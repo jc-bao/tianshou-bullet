@@ -20,7 +20,7 @@ repeat_per_collect: 10 # the number of repeat time for policy learning for each 
 # parallel
 device: cuda # cuda
 training_num: 8 # 64
-test_num: 1 # 10
+test_num: 10 # 10
 
 # PPO
 rew_norm: False # [TBD] not found in others implementation
@@ -39,7 +39,7 @@ recompute_adv: 1 # [Q]
 
 # dir
 logdir: log
-resume_path: null #/Users/reedpan/Desktop/Research/tianshou_bullet/log/NaiveReach-v0/ppo/seed_0_1021_213641_NaiveReach-v0_ppo/policy.pth
+resume_path: null #/Users/reedpan/Desktop/Research/tianshou_bullet/log/NaiveReach-v0/ppo/seed_0_1022_080027_NaiveReach-v0_ppo/policy.pth
 
 # render
 watch_train: False # if show demo directly
