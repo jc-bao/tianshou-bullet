@@ -1,18 +1,16 @@
 # environment
 env: NaivePickAndPlace-v0
-reward_type: dense
+reward_type: dense_o2g
 mode: static
 error: 0.1
 dim: 2
 vel: 0.2
 use_grasp: False
-init_grasp_rate: 0.0
-use_her: True
+init_grasp_rate: 0.5
 seed: 0
 
 # buffer
 buffer_size: 1000000
-replay_k: 4
 
 # network
 hidden_sizes: [256, 256]
@@ -23,21 +21,20 @@ critic_lr: 1.0e-3
 start_timesteps: 10000 # warmup
 epoch: 200 # save times
 step_per_epoch: 5000 # save interval
-step_per_collect: 8 # after collect #, update
 update_per_step: 1 # repeat update time
 estimation_step: 1 # look ahead time steps
 batch_size: 256
 
 # parallel
 device: cuda # cuda
-training_num: 64
-test_num: 10
+training_num: 8 # 64
+test_num: 2 # 10
 
 # Algorithm
+tau: 0.005
 alpha: 0.2 # entropy regularization coefficient
 auto_alpha: False
 alpha_lr: 3e-4 # works if open auto alpha
-tau: 0.005
 gamma: 0.99
 
 # dir

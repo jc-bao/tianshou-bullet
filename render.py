@@ -31,13 +31,13 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode'])
+    env = gym.make(config['env'], config = config)
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     env.close()
     test_envs = DummyVectorEnv(
-        [lambda: gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode'])],
+        [lambda: gym.make(config['env'], config=config)],
         norm_obs = True,
         update_obs_rms = False
     )

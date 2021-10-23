@@ -1,9 +1,12 @@
 # environment
 env: NaivePickAndPlace-v0 # XarmReach-v1
-reward_type: dense
+reward_type: dense_o2g
 mode: static
-error: 0.05
-dim: 3
+error: 0.1
+dim: 2
+vel: 0.2
+use_grasp: False
+init_grasp_rate: 0.5
 seed: 0
 
 # buffer
@@ -22,8 +25,8 @@ repeat_per_collect: 10 # the number of repeat time for policy learning for each 
 
 # parallel
 device: cuda # cuda
-training_num: 64
-test_num: 10
+training_num: 8
+test_num: 1
 
 # PPO
 rew_norm: False # [TBD] not found in others implementation
@@ -42,7 +45,7 @@ recompute_adv: 1 # [Q]
 
 # dir
 logdir: log
-resume_path: /Users/reedpan/Desktop/Research/tianshou_bullet/log/seed_0_1022_163742_NaivePickAndPlace-v0_ppo/policy.pth
+resume_path: /Users/reedpan/Desktop/Research/tianshou_bullet/log/NaivePickAndPlace-v0/ppo/seed_0_1023_103931_NaivePickAndPlace-v0_ppo/policy.pth
 
 # render
 watch_train: False # if show demo directly

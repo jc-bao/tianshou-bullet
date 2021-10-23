@@ -9,16 +9,15 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer, Batch
+from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer
 from tianshou.env import SubprocVectorEnv, DummyVectorEnv
-from tianshou.policy import SACPolicy
+from tianshou.policy import SACPolicy, TD3Policy
 from tianshou.trainer import offpolicy_trainer
 from tianshou.utils import TensorboardLogger
 from tianshou.utils.net.common import Net
 from tianshou.utils.net.continuous import ActorProb, Critic
 
 from test_env import naive_reach, naive_pac
-from her import HERReplayBuffer, HERVectorReplayBuffer
 
 if __name__ == '__main__':
     '''
@@ -37,13 +36,13 @@ if __name__ == '__main__':
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
-    train_envs = DummyVectorEnv(
+    train_envs = SubprocVectorEnv(
         [lambda: gym.make(config['env'], config = config) for _ in range(config['training_num'])],
-        norm_obs = not config['use_her'] 
+        norm_obs = True
     )
     test_envs = SubprocVectorEnv(
         [lambda: gym.make(config['env'], config = config) for _ in range(config['test_num'])],
-        norm_obs = not config['use_her'] ,
+        norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
     )
@@ -118,31 +117,12 @@ if __name__ == '__main__':
     '''
     set up collector
     '''
-    if config['use_her']:
-        # Note: need get index of different type of obervations as indicator after flatten
-        obs = env.reset()
-        achieved_goal_index = len(obs['observation'])
-        desired_goal_index = len(obs['observation']) + len(obs['achieved_goal'])
-        if config['training_num'] > 1:
-            buffer = HERVectorReplayBuffer(total_size = config['buffer_size'], buffer_num = len(train_envs), k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=achieved_goal_index, desired_goal_index=desired_goal_index)
-        else:
-            buffer = HERReplayBuffer(config['buffer_size'], k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=achieved_goal_index, desired_goal_index=desired_goal_index)
+    if config['training_num'] > 1:
+        buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
     else:
-        if config['training_num'] > 1:
-            buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
-        else:
-            buffer = ReplayBuffer(config['buffer_size'])
-    def preprocess_fn(**kwargs):
-        if 'rew' not in kwargs:
-            return Batch(
-                obs = [np.array(list(o.values())).flatten() for o in kwargs['obs']]
-            )
-        else:
-            return Batch(
-                obs_next = [np.array(list(o.values())).flatten() for o in kwargs['obs_next']]
-            )
-    train_collector = Collector(policy, train_envs, buffer, exploration_noise=True, preprocess_fn = preprocess_fn if config['use_her'] else None)
-    test_collector = Collector(policy, test_envs, preprocess_fn = preprocess_fn if config['use_her'] else None)
+        buffer = ReplayBuffer(config['buffer_size'])
+    train_collector = Collector(policy, train_envs, buffer, exploration_noise=True)
+    test_collector = Collector(policy, test_envs)
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)
 
@@ -150,8 +130,8 @@ if __name__ == '__main__':
     logger
     '''
     t0 = datetime.datetime.now().strftime("%m%d_%H%M%S")
-    log_file = 'seed_'+str(config['seed'])+'_'+t0+'_'+config['env']+'_sac'
-    log_path = os.path.join(config['logdir'], config['env'], 'sac', log_file)
+    log_file = 'seed_'+str(config['seed'])+'_'+t0+'_'+config['env']+'_ppo'
+    log_path = os.path.join(config['logdir'], config['env'], 'ppo', log_file)
     writer = SummaryWriter(log_path)
     writer.add_text("args", str(config))
     logger = TensorboardLogger(writer, update_interval=100, train_interval=100)

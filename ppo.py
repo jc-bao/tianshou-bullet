@@ -31,16 +31,16 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode'])
+    env = gym.make(config['env'], config = config)
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     train_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode']) for _ in range(config['training_num'])],
+        [lambda: gym.make(config['env'], config = config) for _ in range(config['training_num'])],
         norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env'], reward_type = config['reward_type'], dim = config['dim'], error = config['error'], mode = config['mode']) for _ in range(config['test_num'])],
+        [lambda: gym.make(config['env'], config = config) for _ in range(config['test_num'])],
         norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
@@ -167,7 +167,7 @@ if __name__ == '__main__':
                 result = policy(data, None)
             action_remap = policy.map_action(result.act)
             obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
-            env.render(mode = 'save', save_path = log_path)
+            env.render(mode = 'tensorboard', writer = writer)
 
     '''
     trainer
