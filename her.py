@@ -44,7 +44,7 @@ class HERReplayBuffer(ReplayBuffer):
         transitions = self[indices]
         # index of transitions to be replaced
         replace_idx = np.random.choice(batch_size, int(batch_size*self.future_p))
-        replace_indices = indices[replace_idx]
+        replace_indices = indices[replace_idx]···
         # get future goal
         future_goal_indices = replace_indices + (np.random.uniform(size=len(replace_idx)) * transitions[replace_idx].info.future_length).astype(int) + 1
         # replace goal and reward

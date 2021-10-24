@@ -1,6 +1,6 @@
 # environment
 env: NaivePickAndPlace-v0
-reward_type: dense
+reward_type: sparse
 mode: static
 error: 0.1
 dim: 2
@@ -11,7 +11,7 @@ use_her: True
 seed: 0
 
 # buffer
-buffer_size: 1000000
+buffer_size: 64000000 # 1000000
 replay_k: 4
 
 # network
@@ -20,18 +20,18 @@ hidden_sizes: [256, 256]
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 10000 # warmup
+start_timesteps: 640000 # 10000 # warmup
 epoch: 200 # save times
-step_per_epoch: 5000 # save interval
-step_per_collect: 8 # after collect #, update
+step_per_epoch: 320000 # 5000 # save interval
+step_per_collect: 64 # 1 # after collect #, update
 update_per_step: 1 # repeat update time
 estimation_step: 1 # look ahead time steps
-batch_size: 256
+batch_size: 16000 #256
 
 # parallel
 device: cuda # cuda
-training_num: 64
-test_num: 10
+training_num: 64 #1
+test_num: 16 # 1
 
 # Algorithm
 alpha: 0.2 # entropy regularization coefficient
