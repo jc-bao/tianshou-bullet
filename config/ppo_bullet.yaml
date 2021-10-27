@@ -1,16 +1,17 @@
 # environment
 env: NaivePickAndPlace-v0 # XarmReach-v1
-reward_type: dense_o2g
+reward_type: dense_diff_o2g
 mode: static
-error: 0.1
+error: 0.05
 dim: 2
 vel: 0.2
 use_grasp: False
-init_grasp_rate: 0.5
+init_grasp_rate: 0.0
+use_her: False
 seed: 0
 
 # buffer
-buffer_size: 4096
+buffer_size: 100000 # 100*1000
 
 # network
 hidden_sizes: [64, 64]
@@ -18,15 +19,15 @@ hidden_sizes: [64, 64]
 # train
 lr: 3.0e-4
 epoch: 100
-step_per_epoch: 30000
-step_per_collect: 2048 # the number of transitions the collector would collect before the network update
-batch_size: 64
+step_per_epoch: 10000000
+step_per_collect: 100000 # the number of transitions the collector would collect before the network update
+batch_size: 1000
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
 
 # parallel
 device: cuda # cuda
-training_num: 8
-test_num: 1
+training_num: 100
+test_num: 10
 
 # PPO
 rew_norm: False # [TBD] not found in others implementation
@@ -45,7 +46,8 @@ recompute_adv: 1 # [Q]
 
 # dir
 logdir: log
-resume_path: /Users/reedpan/Desktop/Research/tianshou_bullet/log/NaivePickAndPlace-v0/ppo/seed_0_1023_103931_NaivePickAndPlace-v0_ppo/policy.pth
+resume_path: null #/home/pcy/Bimanual/tianshou-bullet/log/NaivePickAndPlace-v0/ppo/seed_0_1026_152522_NaivePickAndPlace-v0_ppo/policy.pth
+save_render: True
 
 # render
 watch_train: False # if show demo directly

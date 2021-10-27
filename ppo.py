@@ -1,7 +1,7 @@
 import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
-from test_env import naive_reach, naive_pac
+import gym_naive
 
 import torch
 from torch import nn
@@ -157,17 +157,18 @@ if __name__ == '__main__':
     def save_fn(policy):
         torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
         # save render data
-        obs = env.reset()
-        done = False
-        while not done:
-            data = Batch(
-                obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
-            )
-            with torch.no_grad():  # faster than retain_grad version
-                result = policy(data, None)
-            action_remap = policy.map_action(result.act)
-            obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
-            env.render(mode = 'tensorboard', writer = writer)
+        if config['save_render']:
+            obs = env.reset()
+            done = False
+            while not done:
+                data = Batch(
+                    obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
+                )
+                with torch.no_grad():  # faster than retain_grad version
+                    result = policy(data, None)
+                action_remap = policy.map_action(result.act)
+                obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
+                env.render(mode = 'tensorboard', writer = writer)
 
     '''
     trainer

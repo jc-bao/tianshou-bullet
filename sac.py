@@ -162,6 +162,7 @@ if __name__ == '__main__':
         obs = env.reset()
         done = False
         while not done:
+            obs = np.array(list(obs.values())).flatten()
             data = Batch(
                 obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
             )
