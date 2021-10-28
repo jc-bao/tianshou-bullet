@@ -34,10 +34,10 @@ if __name__ == '__main__':
     make env
     '''
     env = gym.make(config['env'], config = config)
+    obs = env.reset()
     if config['use_her']:
-        state_shape = sum([len(s) for s in env.observation_space.spaces])
-    else:
-        state_shape = env.observation_space.shape
+        obs = np.concatenate(list(obs.values()))
+    state_shape = len(obs)
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     train_envs = SubprocVectorEnv(
@@ -142,7 +142,7 @@ if __name__ == '__main__':
             )
         else:
             return Batch(
-                obs = [np.concatenate(list(o.values())) for o in kwargs['obs_next']]
+                obs_next = [np.concatenate(list(o.values())) for o in kwargs['obs_next']]
             )
     train_collector = Collector(policy, train_envs, buffer, exploration_noise=True, preprocess_fn = preprocess_fn if config['use_her'] else None)
     test_collector = Collector(policy, test_envs, preprocess_fn = preprocess_fn if config['use_her'] else None)
