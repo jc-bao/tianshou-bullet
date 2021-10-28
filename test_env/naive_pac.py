@@ -82,10 +82,7 @@ class NaivePickAndPlace(gym.Env):
             'is_success': (self.d_o2g < self.error),
             'future_length': self._max_episode_steps - self.num_step,
         }
-        if self.use_her:
-            done = (self.num_step >= self._max_episode_steps)
-        else: 
-            done = (self.num_step >= self._max_episode_steps) or (self.d_o2g < self.error)
+        done = self._get_done()
         return obs, reward, done, info
 
     def reset(self):
@@ -102,13 +99,14 @@ class NaivePickAndPlace(gym.Env):
         self.d_o2g = np.linalg.norm(self.obj - self.goal)
         return self._get_obs()
 
-    def render(self, mode = 'human', save_path = None, writer = None):
+    def render(self, mode = 'image', save_path = None, writer = None):
+        print('rendering ...')
         if mode == 'tensorboard':
             for i in range(self.dim):
                 writer.add_scalar('render'+str(self.save_num)+'/pos-goal'+str(i), self.pos[i]-self.goal[i], self.num_step)
                 writer.add_scalar('render'+str(self.save_num)+'/pos-obj'+str(i), self.pos[i]-self.obj[i], self.num_step)
                 writer.add_scalar('render'+str(self.save_num)+'/obj-goal'+str(i), self.obj[i]-self.goal[i], self.num_step)
-            if self.num_step == self._max_episode_steps or (np.linalg.norm(self.obj - self.goal))<self.error:
+            if self.done:
                 self.save_num += 1
         else:
             if self.num_step == 1:
@@ -116,7 +114,7 @@ class NaivePickAndPlace(gym.Env):
                 self.obj_data = [self.obj]
             self.pos_data.append(self.pos)
             self.obj_data.append(self.obj)
-            if self.num_step == self._max_episode_steps:
+            if self._get_done():
                 if self.dim == 2:
                     for i,d in enumerate(self.pos_data):
                         plt.plot(d[0], d[1], 'o', color = [0,0,1,i/50])
@@ -132,6 +130,7 @@ class NaivePickAndPlace(gym.Env):
                             os.makedirs(fullpath)
                         fullpath = os.path.join(save_path, 'pic/pic'+str(self.save_num)+'.png')
                         plt.savefig(fullpath)
+                        print('picture saved in ', fullpath)
                         self.save_num += 1
                         plt.clf()
                 elif self.dim == 3:
@@ -162,6 +161,12 @@ class NaivePickAndPlace(gym.Env):
             }
         else:
             return np.concatenate((self.pos,self.obj,self.goal)) 
+    
+    def _get_done(self):
+        if self.use_her:
+            self.done = (self.num_step >= self._max_episode_steps)
+        else: 
+            self.done = (self.num_step >= self._max_episode_steps) or (self.d_o2g < self.error)
 
     def compute_reward(self, achieved_goal, desired_goal, info):
         return np.linalg.norm(achieved_goal-desired_goal) < self.error
@@ -182,7 +187,7 @@ class NaivePickAndPlace(gym.Env):
 
 register(
     id='NaivePickAndPlace-v0',
-    entry_point='test_env.naive_pac:NaivePickAndPlace',
+    entry_point='gym_naive.naive_pac:NaivePickAndPlace',
 )
 
 if __name__ == '__main__':

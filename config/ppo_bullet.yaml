@@ -1,6 +1,6 @@
 # environment
 env: NaivePickAndPlace-v0 # XarmReach-v1
-reward_type: dense_diff_o2g
+reward_type: sparse
 mode: static
 error: 0.05
 dim: 2
@@ -19,7 +19,7 @@ hidden_sizes: [64, 64]
 # train
 lr: 3.0e-4
 epoch: 100
-step_per_epoch: 10000000
+step_per_epoch: 1000000
 step_per_collect: 100000 # the number of transitions the collector would collect before the network update
 batch_size: 1000
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
@@ -46,7 +46,7 @@ recompute_adv: 1 # [Q]
 
 # dir
 logdir: log
-resume_path: null #/home/pcy/Bimanual/tianshou-bullet/log/NaivePickAndPlace-v0/ppo/seed_0_1026_152522_NaivePickAndPlace-v0_ppo/policy.pth
+resume_path: null
 save_render: True
 
 # render

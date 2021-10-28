@@ -4,7 +4,7 @@ import os
 import pprint
 import yaml
 
-import gym
+import gym, gym_xarm
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -34,10 +34,13 @@ if __name__ == '__main__':
     make env
     '''
     env = gym.make(config['env'], config = config)
-    state_shape = env.observation_space.shape
+    if config['use_her']:
+        state_shape = sum([len(s) for s in env.observation_space.spaces])
+    else:
+        state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
-    train_envs = DummyVectorEnv(
+    train_envs = SubprocVectorEnv(
         [lambda: gym.make(config['env'], config = config) for _ in range(config['training_num'])],
         norm_obs = not config['use_her'] 
     )
@@ -135,11 +138,11 @@ if __name__ == '__main__':
     def preprocess_fn(**kwargs):
         if 'rew' not in kwargs:
             return Batch(
-                obs = [np.array(list(o.values())).flatten() for o in kwargs['obs']]
+                obs = [np.concatenate(list(o.values())) for o in kwargs['obs']]
             )
         else:
             return Batch(
-                obs_next = [np.array(list(o.values())).flatten() for o in kwargs['obs_next']]
+                obs = [np.concatenate(list(o.values())) for o in kwargs['obs_next']]
             )
     train_collector = Collector(policy, train_envs, buffer, exploration_noise=True, preprocess_fn = preprocess_fn if config['use_her'] else None)
     test_collector = Collector(policy, test_envs, preprocess_fn = preprocess_fn if config['use_her'] else None)

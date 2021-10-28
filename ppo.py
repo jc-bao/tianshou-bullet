@@ -32,7 +32,10 @@ if __name__ == '__main__':
     make env
     '''
     env = gym.make(config['env'], config = config)
-    state_shape = env.observation_space.shape
+    if config['use_her']:
+        state_shape = sum([len(s) for s in env.observation_space.spaces])
+    else:
+        state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     train_envs = SubprocVectorEnv(

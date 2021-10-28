@@ -1,7 +1,6 @@
-import gym_xarm, yaml, gym, pybulletgym
+import gym_xarm, yaml, gym, pybulletgym, gym_naive
 import datetime, os, pprint
 import numpy as np
-from test_env import naive_reach, naive_pac
 
 import torch
 from torch import nn
