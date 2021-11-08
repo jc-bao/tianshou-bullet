@@ -2,6 +2,8 @@ import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
 import gym_naive
+import robosuite as suite
+from robosuite.wrappers import GymWrapper
 
 import torch
 from torch import nn
@@ -31,19 +33,33 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+    def make_env():
+        env =  GymWrapper(suite.make(
+            env_name='TwoArmHandover', # try with other tasks like "Stack" and "Door"
+            robots=["Panda"]*2,  # try with other robots like "Sawyer" and "Jaco"
+            has_renderer=False,
+            has_offscreen_renderer=False,
+            use_object_obs=True,
+            use_camera_obs=False,
+            reward_shaping=True,
+            control_freq = 20,
+            controller_configs=suite.controllers.load_controller_config(default_controller='OSC_POSE'),
+            horizon = 500
+        )) # gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+        return env
+    env = make_env()
     if config['use_her']:
         state_shape = sum([len(s) for s in env.observation_space.spaces])
     else:
-        state_shape = env.observation_space.shape
+        state_shape = env.observation_space.shape 
     action_shape = env.action_space.shape
-    max_action = env.action_space.high[0]
+    max_action = env.action_space.high[0] or 1
     train_envs = SubprocVectorEnv(
-        [lambda: gym.wrappers.FlattenObservation(gym.make(config['env'], config = config)) for _ in range(config['training_num'])],
+        [make_env for _ in range(config['training_num'])],
         norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [lambda: gym.wrappers.FlattenObservation(gym.make(config['env'], config = config)) for _ in range(config['test_num'])],
+        [make_env for _ in range(config['test_num'])],
         norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False

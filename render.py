@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # env = gym.make(config['env'], config = config)
     env = gym.wrappers.FlattenObservation(BimanualHandover())
     state_shape = env.observation_space.shape
-    action_shape = env.action_space.shape
+    action_shape = env.action_space.shape or env.action_dim
     max_action = env.action_space.high[0]
     env.close()
     test_envs = DummyVectorEnv(

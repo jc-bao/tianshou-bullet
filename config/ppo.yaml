@@ -1,5 +1,5 @@
 # environment
-env: XarmPickAndPlace-v1 #XarmReach-v1
+env: TwoArmHandover #XarmReach-v1
 init_grasp_rate: 0.5
 goal_ground_rate: 0.5
 action_type: continous
@@ -13,7 +13,7 @@ seed: 0
 buffer_size: 256000
 
 # network
-hidden_sizes: [64, 64]
+hidden_sizes: [256, 256]
 
 # train
 lr: 3.0e-4
@@ -26,7 +26,7 @@ repeat_per_collect: 10 # the number of repeat time for policy learning for each 
 # parallel
 device: cuda # cuda
 training_num: 64 # 64
-test_num: 16 # 10
+test_num: 10 # 10
 
 # PPO
 rew_norm: True
