@@ -1,5 +1,5 @@
 # environment
-env: NaivePickAndPlace-v0 # XarmReach-v1
+env: NaivePickAndPlace-v0
 reward_type: sparse
 mode: static
 error: 0.05
@@ -11,7 +11,7 @@ use_her: False
 seed: 0
 
 # buffer
-buffer_size: 100000 # 100*1000
+buffer_size: 32000 # 100*1000
 
 # network
 hidden_sizes: [64, 64]
@@ -19,18 +19,18 @@ hidden_sizes: [64, 64]
 # train
 lr: 3.0e-4
 epoch: 100
-step_per_epoch: 1000000
-step_per_collect: 100000 # the number of transitions the collector would collect before the network update
+step_per_epoch: 3200000
+step_per_collect: 32000 # the number of transitions the collector would collect before the network update
 batch_size: 1000
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
 
 # parallel
 device: cuda # cuda
-training_num: 100
-test_num: 10
+training_num: 32
+test_num: 16
 
 # PPO
-rew_norm: False # [TBD] not found in others implementation
+rew_norm: True # [TBD] not found in others implementation
 vf_coef: 0.25 # [Q] weight for value loss
 ent_coef: 0.0 # [Q] weight for entropy loss
 gamma: 0.99
@@ -47,7 +47,7 @@ recompute_adv: 1 # [Q]
 # dir
 logdir: log
 resume_path: null
-save_render: True
+save_render: False
 
 # render
 watch_train: False # if show demo directly

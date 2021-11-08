@@ -1,7 +1,8 @@
 import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
-import gym_naive
+import gym_naive 
+from yunfei_arm_env.bimanual_env import BimanualHandover
 
 import torch
 from torch import nn
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config/ppo.yaml", "r") as stream:
+    with open("config/ppo_arm.yaml", "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -31,19 +32,22 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-    if config['use_her']:
-        state_shape = sum([len(s) for s in env.observation_space.spaces])
-    else:
-        state_shape = env.observation_space.shape
+    # kwargs = dict(
+    #     robot='panda',
+    #     reward_type='sparse',
+    #     n_object=2,
+    # )
+    env = gym.wrappers.FlattenObservation(BimanualHandover())
+    # end change
+    state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     train_envs = SubprocVectorEnv(
-        [lambda: gym.wrappers.FlattenObservation(gym.make(config['env'], config = config)) for _ in range(config['training_num'])],
+        [lambda:  gym.wrappers.FlattenObservation(BimanualHandover()) for _ in range(config['training_num'])],
         norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [lambda: gym.wrappers.FlattenObservation(gym.make(config['env'], config = config)) for _ in range(config['test_num'])],
+        [lambda:  gym.wrappers.FlattenObservation(BimanualHandover()) for _ in range(config['test_num'])],
         norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
@@ -167,7 +171,7 @@ if __name__ == '__main__':
                 data = Batch(
                     obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
                 )
-                with torch.no_grad():  # faster than retain_grad version
+                with torch.no_grad():  # faster than retain_gra version
                     result = policy(data, None)
                 action_remap = policy.map_action(result.act)
                 obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())

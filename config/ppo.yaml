@@ -1,9 +1,16 @@
 # environment
-env: XarmReach-v1 #XarmReach-v1
+env: XarmPickAndPlace-v1 #XarmReach-v1
+init_grasp_rate: 0.5
+goal_ground_rate: 0.5
+action_type: continous
+grasp_mode: hard
+reward_type: sparse
+use_her: False
+save_render: False
 seed: 0
 
 # buffer
-buffer_size: 4096
+buffer_size: 256000
 
 # network
 hidden_sizes: [64, 64]
@@ -11,15 +18,15 @@ hidden_sizes: [64, 64]
 # train
 lr: 3.0e-4
 epoch: 100
-step_per_epoch: 30000
-step_per_collect: 10 # the number of transitions the collector would collect before the network update
-batch_size: 64
+step_per_epoch: 25600000
+step_per_collect: 256000 # the number of transitions the collector would collect before the network update
+batch_size: 8000
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
 
 # parallel
 device: cuda # cuda
-training_num: 1 # 64
-test_num: 10 # 10
+training_num: 64 # 64
+test_num: 16 # 10
 
 # PPO
 rew_norm: True
@@ -38,8 +45,8 @@ recompute_adv: 1 # [Q]
 
 # dir
 logdir: log
-resume_path: /Users/reedpan/Desktop/Research/ppo/log/XarmReach-v1/ppo/seed_0_1014_073654_XarmReach-v1_ppo/policy.pth
+resume_path: null
 
 # render
 watch_train: False # if show demo directly
-render: 0.02 # render time rate
+render: 0 # render time rate
