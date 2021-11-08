@@ -2,6 +2,8 @@ import gym_xarm, yaml, gym, pybulletgym, gym_naive
 import datetime, os, pprint
 import numpy as np
 
+from yunfei_arm_env.bimanual_env import BimanualHandover
+
 import torch
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
@@ -21,7 +23,7 @@ if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config/ppo_bullet.yaml", "r") as stream:
+    with open("config/ppo_arm.yaml", "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -30,13 +32,15 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.make(config['env'], config = config)
+    # env = gym.make(config['env'], config = config)
+    env = gym.wrappers.FlattenObservation(BimanualHandover())
     state_shape = env.observation_space.shape
     action_shape = env.action_space.shape
     max_action = env.action_space.high[0]
     env.close()
     test_envs = DummyVectorEnv(
-        [lambda: gym.make(config['env'], config=config)],
+        # [lambda: gym.make(config['env'], config=config)],
+        [lambda:  gym.wrappers.FlattenObservation(BimanualHandover(enable_GUI = True))],
         norm_obs = True,
         update_obs_rms = False
     )
@@ -137,5 +141,5 @@ if __name__ == '__main__':
     '''
     policy.eval()
     test_collector.reset()
-    result = test_collector.collect(n_episode=10, render=0.000001)
+    result = test_collector.collect(n_episode=10, render=0)
     print(f'Final reward: {result["rews"].mean()}, length: {result["lens"].mean()}')
