@@ -1,17 +1,16 @@
 # environment
-env: NaivePickAndPlace-v0
+env: Handover-dense
+init_grasp_rate: 0.5
+goal_ground_rate: 0.5
+action_type: continous
+grasp_mode: hard
 reward_type: sparse
-mode: static
-error: 0.05
-dim: 2
-vel: 0.2
-use_grasp: False
-init_grasp_rate: 0.0
 use_her: False
+save_render: False
 seed: 0
 
 # buffer
-buffer_size: 32000 # 100*1000
+buffer_size: 256000
 
 # network
 hidden_sizes: [64, 64]
@@ -19,18 +18,18 @@ hidden_sizes: [64, 64]
 # train
 lr: 3.0e-4
 epoch: 100
-step_per_epoch: 3200000
-step_per_collect: 32000 # the number of transitions the collector would collect before the network update
-batch_size: 1000
+step_per_epoch: 25600000
+step_per_collect: 256000 # the number of transitions the collector would collect before the network update
+batch_size: 8000
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
 
 # parallel
 device: cuda # cuda
-training_num: 32
-test_num: 16
+training_num: 64 # 64
+test_num: 16 # 10
 
 # PPO
-rew_norm: True # [TBD] not found in others implementation
+rew_norm: True
 vf_coef: 0.25 # [Q] weight for value loss
 ent_coef: 0.0 # [Q] weight for entropy loss
 gamma: 0.99
@@ -40,15 +39,14 @@ lr_decay: True
 max_grad_norm: 0.5
 eps_clip: 0.2 
 dual_clip: null # [Q]
-value_clip: False # [Q]
+value_clip: 0 # [Q]
 norm_adv: 0 # [Q]
 recompute_adv: 1 # [Q]
 
 # dir
 logdir: log
 resume_path: null
-save_render: False
 
 # render
 watch_train: False # if show demo directly
-render: 0. # render time rate
+render: 0 # render time rate

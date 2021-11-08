@@ -162,6 +162,7 @@ if __name__ == '__main__':
     def save_fn(policy):
         torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
         # save render data
+        '''
         obs = env.reset()
         done = False
         while not done:
@@ -174,7 +175,8 @@ if __name__ == '__main__':
             action_remap = policy.map_action(result.act)
             obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
             env.render(mode = 'tensorboard', writer = writer)
-
+        '''
+        
     '''
     trainer
     '''

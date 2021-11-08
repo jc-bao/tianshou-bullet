@@ -2,7 +2,7 @@
 env: XarmPDPickAndPlace-v0
 action_type: continous
 grasp_mode: easy
-reward_type: dense_o2g
+reward_type: sparse
 init_grasp_rate: 0.0
 goal_ground_rate: 0.0
 mode: static
@@ -34,8 +34,8 @@ batch_size: 256 #256
 
 # parallel
 device: cuda # cuda
-training_num: 2
-test_num: 1
+training_num: 64
+test_num: 16
 
 # Algorithm
 alpha: 0.2 # entropy regularization coefficient
@@ -47,6 +47,7 @@ gamma: 0.99
 # dir
 logdir: log
 resume_path: null
+save_render: False
 
 # render
 watch_train: False # if show demo directly
