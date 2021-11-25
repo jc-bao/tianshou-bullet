@@ -1,0 +1,45 @@
+# environment
+env: CoinFlip-v0
+n: 4
+use_her: True
+seed: 1
+
+# buffer
+buffer_size: 1000000
+replay_k: 4
+
+# network
+hidden_sizes: [256, 256]
+
+# train
+actor_lr: 1.0e-3
+critic_lr: 1.0e-3
+start_timesteps: 16000 # warmup
+epoch: 100 # save times
+step_per_epoch: 16000 # save interval (50repeat)
+step_per_collect: 320 #(64path) after collect #, update
+update_per_step: 40 # repeat update time
+estimation_step: 1 # look ahead time steps
+batch_size: 128
+target_update_freq: 100
+
+# parallel
+device: cuda
+training_num: 8
+test_num: 2
+
+# Algorithm
+alpha: 0.2 # entropy regularization coefficient
+auto_alpha: False
+alpha_lr: 3e-4 # works if open auto alpha
+tau: 0.005
+gamma: 0.98
+
+# dir
+logdir: log
+resume_path: null
+save_render: False
+
+# render
+watch_train: False # if show demo directly
+render: 0 # render time rate

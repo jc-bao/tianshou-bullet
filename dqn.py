@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer, Batch
 from tianshou.env import SubprocVectorEnv, DummyVectorEnv
-from tianshou.policy import SACPolicy
+from tianshou.policy import DQNPolicy
 from tianshou.trainer import offpolicy_trainer
 from tianshou.utils import TensorboardLogger
 from tianshou.utils.net.common import Net
@@ -38,8 +38,7 @@ if __name__ == '__main__':
     if config['use_her']:
         obs = np.concatenate(list(obs.values()))
     state_shape = len(obs)
-    action_shape = env.action_space.shape
-    max_action = env.action_space.high[0]
+    action_shape = env.action_space.shape or env.action_space.n
     train_envs = SubprocVectorEnv(
         [lambda: gym.make(config['env'], config = config) for _ in range(config['training_num'])],
         norm_obs = not config['use_her'] 
@@ -60,63 +59,24 @@ if __name__ == '__main__':
     '''
     if not (torch.cuda.is_available()):
         config['device'] = 'cpu'
-    # actor
-    net_a = Net(state_shape, hidden_sizes=config['hidden_sizes'], device=config['device'])
-    actor = ActorProb(
-        net_a,
-        action_shape,
-        max_action=max_action,
-        device=config['device'],
-        unbounded=True,
-        conditioned_sigma=True
-    ).to(config['device'])
-    actor_optim = torch.optim.Adam(actor.parameters(), lr=config['actor_lr'])
-    # critic
-    net_c1 = Net(
-        state_shape,
-        action_shape,
-        hidden_sizes=config['hidden_sizes'],
-        concat=True,
-        device=config['device']
-    )
-    net_c2 = Net(
-        state_shape,
-        action_shape,
-        hidden_sizes=config['hidden_sizes'],
-        concat=True,
-        device=config['device']
-    )
-    critic1 = Critic(net_c1, device=config['device']).to(config['device'])
-    critic1_optim = torch.optim.Adam(critic1.parameters(), lr=config['critic_lr'])
-    critic2 = Critic(net_c2, device=config['device']).to(config['device'])
-    critic2_optim = torch.optim.Adam(critic2.parameters(), lr=config['critic_lr'])
-    # auto alpha
-    if config['auto_alpha']:
-        target_entropy = -np.prod(env.action_space.shape)
-        log_alpha = torch.zeros(1, requires_grad=True, device=config['device'])
-        alpha_optim = torch.optim.Adam([log_alpha], lr=config['alpha_lr'])
-        config['alpha'] = (target_entropy, log_alpha, alpha_optim)
-
+    net = Net(state_shape = state_shape, action_shape=action_shape, hidden_sizes=config['hidden_sizes'], device=config['device'])
+    optim = torch.optim.Adam(net.parameters(), lr=config['critic_lr'])
+    # define policy
     '''
     set up policy
     '''
-    policy = SACPolicy(
-        actor,
-        actor_optim,
-        critic1,
-        critic1_optim,
-        critic2,
-        critic2_optim,
-        tau=config['tau'],
-        gamma=config['gamma'],
-        alpha=config['alpha'],
-        estimation_step=config['estimation_step'],
-        action_space=env.action_space
+    policy = DQNPolicy(
+        net,
+        optim,
+        config['gamma'],
+        config['estimation_step'],
+        target_update_freq=config['target_update_freq']
     )
     # load policy
     if config['resume_path']:
         policy.load_state_dict(torch.load(config['resume_path'], map_location=config['device']))
         print("Loaded agent from: ", config['resume_path'])
+
 
     '''
     set up collector
@@ -161,21 +121,6 @@ if __name__ == '__main__':
     # save function
     def save_fn(policy):
         torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
-        # save render data
-        '''
-        obs = env.reset()
-        done = False
-        while not done:
-            obs = np.array(list(obs.values())).flatten()
-            data = Batch(
-                obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
-            )
-            with torch.no_grad():  # faster than retain_grad version
-                result = policy(data, None)
-            action_remap = policy.map_action(result.act)
-            obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
-            env.render(mode = 'tensorboard', writer = writer)
-        '''
         
     '''
     trainer
