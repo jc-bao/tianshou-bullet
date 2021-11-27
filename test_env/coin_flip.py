@@ -42,7 +42,7 @@ class CoinFlip(gym.Env):
         }
 
     def compute_reward(self, achieved_goal, desired_goal, info):
-        return float(self.coin==self.goal)
+        return float((achieved_goal==desired_goal).all())
         
 gym.register(
     id='CoinFlip-v0',

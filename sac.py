@@ -24,7 +24,7 @@ if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config/coin_flip.yaml", "r") as stream:
+    with open("config/sac.yaml", "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -33,20 +33,19 @@ if __name__ == '__main__':
     '''
     make env
     '''
-    env = gym.make(config['env'], config = config)
+    def make_env():
+        return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+    env = make_env()
     obs = env.reset()
-    if config['use_her']:
-        obs = np.concatenate(list(obs.values()))
     state_shape = len(obs)
-    action_shape = env.action_space.shape
-    max_action = env.action_space.high[0]
+    action_shape = env.action_space.shape or env.action_space.n
     train_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env'], config = config) for _ in range(config['training_num'])],
-        norm_obs = not config['use_her'] 
+        [make_env for _ in range(config['training_num'])],
+        norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [lambda: gym.make(config['env'], config = config) for _ in range(config['test_num'])],
-        norm_obs = not config['use_her'] ,
+        [make_env for _ in range(config['test_num'])],
+        norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
     )
@@ -65,7 +64,7 @@ if __name__ == '__main__':
     actor = ActorProb(
         net_a,
         action_shape,
-        max_action=max_action,
+        max_action=env.action_space.high[0],
         device=config['device'],
         unbounded=True,
         conditioned_sigma=True
@@ -135,17 +134,8 @@ if __name__ == '__main__':
             buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
         else:
             buffer = ReplayBuffer(config['buffer_size'])
-    def preprocess_fn(**kwargs):
-        if 'rew' not in kwargs:
-            return Batch(
-                obs = [np.concatenate(list(o.values())) for o in kwargs['obs']]
-            )
-        else:
-            return Batch(
-                obs_next = [np.concatenate(list(o.values())) for o in kwargs['obs_next']]
-            )
-    train_collector = Collector(policy, train_envs, buffer, exploration_noise=True, preprocess_fn = preprocess_fn if config['use_her'] else None)
-    test_collector = Collector(policy, test_envs, preprocess_fn = preprocess_fn if config['use_her'] else None)
+    train_collector = Collector(policy, train_envs, buffer, exploration_noise=True)
+    test_collector = Collector(policy, test_envs)
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)
 
