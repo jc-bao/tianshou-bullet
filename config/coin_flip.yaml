@@ -1,7 +1,7 @@
 # environment
 env: CoinFlip-v0
-n: 4
-use_her: True
+n: 16
+use_her: False
 seed: 1
 
 # buffer
@@ -9,24 +9,24 @@ buffer_size: 1000000
 replay_k: 4
 
 # network
-hidden_sizes: [256, 256]
+hidden_sizes: [256]
 
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 16000 # warmup
+start_timesteps: 6400 # warmup
 epoch: 100 # save times
-step_per_epoch: 16000 # save interval (50repeat)
-step_per_collect: 320 #(64path) after collect #, update
-update_per_step: 40 # repeat update time
+step_per_epoch: 640000 # save interval (50repeat)
+step_per_collect: 800 #(64path) after collect #, update
+update_per_step: 0.05 # reuse time of steps
 estimation_step: 1 # look ahead time steps
 batch_size: 128
-target_update_freq: 100
+target_update_freq: 800
 
 # parallel
 device: cuda
-training_num: 8
-test_num: 2
+training_num: 1
+test_num: 1
 
 # Algorithm
 alpha: 0.2 # entropy regularization coefficient

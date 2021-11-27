@@ -40,16 +40,20 @@ class HERReplayBuffer(ReplayBuffer):
 
         :return: Sample data and its corresponding index inside the buffer.
         """
-        indices = self.sample_indices(batch_size)
-        transitions = self[indices]
+        transitions, indices = self.sample(batch_size)
+        print(self, transitions)
         # index of transitions to be replaced
         replace_idx = np.random.choice(batch_size, int(batch_size*self.future_p))
         replace_indices = indices[replace_idx]
         # get future goal
-        future_goal_indices = replace_indices + (np.random.uniform(size=len(replace_idx)) * transitions[replace_idx].info.future_length).astype(int) + 1
+        future_goal_indices = replace_indices + (np.random.uniform(size=len(replace_idx)) * transitions[replace_idx].info.future_length).astype(int)
         # replace goal and reward
-        transitions[replace_idx].obs[:, self.desired_goal_index:] = self[future_goal_indices].obs[:, self.achieved_goal_index:self.desired_goal_index]
-        transitions[replace_idx].reward = [self.reward_fn(transitions[i].obs[self.achieved_goal_index:self.desired_goal_index], transitions[i].obs[self.desired_goal_index:], transitions[i].info) for i in replace_idx]
+        obs_future = self.obs[future_goal_indices]
+        obs_old = transitions.obs[replace_idx]
+        obs_new = np.concatenate((obs_old[:, :self.desired_goal_index], obs_future[:, self.achieved_goal_index:self.desired_goal_index]), axis = 1)
+        transitions.obs[replace_idx] = obs_new
+        for i, idx in enumerate(replace_idx):
+            transitions.rew[idx] = self.reward_fn(obs_new[i, self.achieved_goal_index:self.desired_goal_index], obs_new[i, self.desired_goal_index:], None)
         return transitions, indices
 
 class HERVectorReplayBuffer(ReplayBufferManager):
