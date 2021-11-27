@@ -6,8 +6,14 @@ class CoinFlip(gym.Env):
     def __init__(self, config):
         self.n = config['n']
         self.reset()
+        self.achieved_goal_index = 0
+        self.desired_goal_index = config['n']
         self.action_space = spaces.Discrete(config['n'])
-        self.observation_space = spaces.Discrete(config['n']*2)
+        self.observation_space = spaces.Dict(dict(
+            desired_goal=spaces.Discrete(config['n']),
+            achieved_goal=spaces.Discrete(config['n']),
+            observation=spaces.Discrete(0),
+        ))
 
     def step(self, act):
         self.num_steps += 1

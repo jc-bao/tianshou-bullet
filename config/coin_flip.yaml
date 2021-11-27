@@ -1,7 +1,7 @@
 # environment
 env: CoinFlip-v0
-n: 16
-use_her: False
+n: 4
+use_her: True
 seed: 1
 
 # buffer
@@ -9,7 +9,7 @@ buffer_size: 1000000
 replay_k: 4
 
 # network
-hidden_sizes: [256]
+hidden_sizes: [64, 64]
 
 # train
 actor_lr: 1.0e-3
