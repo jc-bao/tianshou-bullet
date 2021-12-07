@@ -12,19 +12,21 @@ from torch.utils.tensorboard import SummaryWriter
 from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer, Batch
 from tianshou.env import SubprocVectorEnv, DummyVectorEnv
 from tianshou.policy import SACPolicy
-from tianshou.trainer import offpolicy_trainer
 from tianshou.utils import TensorboardLogger
 from tianshou.utils.net.common import Net
 from tianshou.utils.net.continuous import ActorProb, Critic
 
-from test_env import coin_flip
-from her import HERReplayBuffer, HERVectorReplayBuffer
+import gym_naive
+from her_collector import HERCollector
+from offpolicy import offpolicy_trainer # custom off policy trainer, add success log
+import time
+from functools import partial
 
 if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config/sac.yaml", "r") as stream:
+    with open("config/sac_debug.yaml", "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -34,8 +36,16 @@ if __name__ == '__main__':
     make env
     '''
     def make_env():
-        return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-    env = make_env()
+        # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+        return gym.wrappers.FlattenObservation(gym.make('FetchPickAndPlace-v1'))
+    def make_record_env(i):
+        print(i)
+        # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make('FetchPickAndPlace-v1')), video_folder = 'video/'+'foo'+str(i))
+    # env = gym.make(config['env'], config = config)
+    env = gym.make('FetchPickAndPlace-v1')
+    observation_space = env.observation_space
+    env = gym.wrappers.FlattenObservation(env)
     obs = env.reset()
     state_shape = len(obs)
     action_shape = env.action_space.shape or env.action_space.n
@@ -44,7 +54,7 @@ if __name__ == '__main__':
         norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [make_env for _ in range(config['test_num'])],
+        [partial(make_record_env, i) for i in range(config['test_num'])], 
         norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
@@ -120,21 +130,12 @@ if __name__ == '__main__':
     '''
     set up collector
     '''
-    if config['use_her']:
-        # Note: need get index of different type of obervations as indicator after flatten
-        obs = env.reset()
-        achieved_goal_index = len(obs['observation'])
-        desired_goal_index = len(obs['observation']) + len(obs['achieved_goal'])
-        if config['training_num'] > 1:
-            buffer = HERVectorReplayBuffer(total_size = config['buffer_size'], buffer_num = len(train_envs), k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=achieved_goal_index, desired_goal_index=desired_goal_index)
-        else:
-            buffer = HERReplayBuffer(config['buffer_size'], k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=achieved_goal_index, desired_goal_index=desired_goal_index)
+    if config['training_num'] > 1:
+        buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
     else:
-        if config['training_num'] > 1:
-            buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
-        else:
-            buffer = ReplayBuffer(config['buffer_size'])
-    train_collector = Collector(policy, train_envs, buffer, exploration_noise=True)
+        buffer = ReplayBuffer(config['buffer_size'])
+    train_collector = HERCollector(policy, train_envs, buffer, exploration_noise=True, observation_space = observation_space, reward_fn = env.compute_reward, k = config['replay_k'], fail_reward = config['fail_reward'])
+    # train_collector = Collector(policy, train_envs, buffer, exploration_noise=True)
     test_collector = Collector(policy, test_envs)
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)

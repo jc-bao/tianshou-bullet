@@ -1,11 +1,13 @@
 # environment
-env: CoinFlip-v0
-n: 4
-use_her: False
-seed: 1
+env: XarmReach-v0
+reward_type: sparse
+use_her: True
+GUI: False
+seed: 0
+max_reward: 1 # max reward to judge if done
 
 # buffer
-buffer_size: 10000
+buffer_size: 1000
 replay_k: 4
 
 # network
@@ -15,13 +17,12 @@ hidden_sizes: [64, 64]
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
 start_timesteps: 100 # warmup
-epoch: 100 # save times
-step_per_epoch: 10000 # save interval (50repeat)
+epoch: 1 # save times
+step_per_epoch: 1000 # save interval (50repeat)
 step_per_collect: 100 #(64path) after collect #, update
-update_per_step: 0.05 # reuse time of steps
+update_per_step: 0.02 # reuse time of steps
 estimation_step: 1 # look ahead time steps
-batch_size: 4
-target_update_freq: 80
+batch_size:  5
 
 # parallel
 device: cuda
@@ -33,7 +34,7 @@ alpha: 0.2 # entropy regularization coefficient
 auto_alpha: False
 alpha_lr: 3e-4 # works if open auto alpha
 tau: 0.005
-gamma: 0.98
+gamma: 0.99
 
 # dir
 logdir: log
@@ -42,4 +43,4 @@ save_render: False
 
 # render
 watch_train: False # if show demo directly
-render: 0 # render time rate
+render: 0.00 # render time rate

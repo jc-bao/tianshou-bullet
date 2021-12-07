@@ -18,7 +18,7 @@ from tianshou.utils.net.common import Net
 from tianshou.utils.net.continuous import ActorProb, Critic
 
 from test_env import coin_flip
-from her import HERReplayBuffer, HERVectorReplayBuffer
+from her_collector import HERCollector
 
 if __name__ == '__main__':
     '''
@@ -35,7 +35,9 @@ if __name__ == '__main__':
     '''
     def make_env():
         return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-    env = make_env()
+    env = gym.make(config['env'], config = config)
+    observation_space = env.observation_space
+    env = gym.wrappers.FlattenObservation(env)
     obs = env.reset()
     state_shape = len(obs)
     action_shape = env.action_space.shape or env.action_space.n
@@ -81,18 +83,18 @@ if __name__ == '__main__':
     '''
     set up collector
     '''
-    if config['use_her']:
-        # Note: need get index of different type of obervations as indicator after flatten
-        if config['training_num'] > 1:
-            buffer = HERVectorReplayBuffer(total_size = config['buffer_size'], buffer_num = len(train_envs), k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=env.achieved_goal_index, desired_goal_index=env.desired_goal_index)
-        else:
-            buffer = HERReplayBuffer(config['buffer_size'], k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=env.achieved_goal_index, desired_goal_index=env.desired_goal_index)
+    # if config['use_her']:
+    #     # Note: need get index of different type of obervations as indicator after flatten
+    #     if config['training_num'] > 1:
+    #         buffer = HERVectorReplayBuffer(total_size = config['buffer_size'], buffer_num = len(train_envs), k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=env.achieved_goal_index, desired_goal_index=env.desired_goal_index, max_reward = config['max_reward'])
+    #     else:
+    #         buffer = HERReplayBuffer(config['buffer_size'], k = config['replay_k'], reward_fn = env.compute_reward, achieved_goal_index=env.achieved_goal_index, desired_goal_index=env.desired_goal_index, max_reward = config['max_reward'])
+    # else:
+    if config['training_num'] > 1:
+        buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
     else:
-        if config['training_num'] > 1:
-            buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
-        else:
-            buffer = ReplayBuffer(config['buffer_size'])
-    train_collector = Collector(policy, train_envs, buffer, exploration_noise=True)
+        buffer = ReplayBuffer(config['buffer_size'])
+    train_collector = HERCollector(policy, train_envs, buffer, exploration_noise=True, observation_space = observation_space, reward_fn = env.compute_reward, k = 2)
     test_collector = Collector(policy, test_envs)
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)

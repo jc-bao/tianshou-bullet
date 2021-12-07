@@ -1,12 +1,12 @@
 # environment
-env: CoinFlip-v0
-n: 4
-use_her: True
-seed: 10
-max_reward: 1
+env: FetchPickAndPlace-v1
+dim: 2
+reward_type: sparse
+fail_reward: -50
+seed: 5
 
 # buffer
-buffer_size: 1000000
+buffer_size: 16000000
 replay_k: 4
 
 # network
@@ -15,19 +15,18 @@ hidden_sizes: [64, 64]
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 10240 # warmup
+start_timesteps: 1 # 160000 # warmup·
 epoch: 100 # save times
-step_per_epoch: 102400 # save interval (50repeat)
-step_per_collect: 1024 #(64path) after collect #, update
-update_per_step: 0.04 # reuse time of steps
+step_per_epoch: 1 # 160000 # save interval (50repeat)
+step_per_collect: 1 # 1600 #(64path) after collect #, update
+update_per_step: 0.025 # repeat update time
 estimation_step: 1 # look ahead time steps
-batch_size:  128
-target_update_freq: 2
+batch_size: 4096
 
 # parallel
-device: cuda
-training_num: 4
-test_num: 1
+device: cuda # cuda
+training_num: 1 # 32 # 64
+test_num: 1 # 4 # 16
 
 # Algorithm
 alpha: 0.2 # entropy regularization coefficient
@@ -43,4 +42,4 @@ save_render: False
 
 # render
 watch_train: False # if show demo directly
-render: 0 # render time rate
+render: 0.00 # render time rate

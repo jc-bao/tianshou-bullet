@@ -25,6 +25,7 @@ class HERReplayBuffer(ReplayBuffer):
         reward_fn,
         achieved_goal_index: int,
         desired_goal_index: int,
+        max_reward: int,
         **kwargs: Any
     ) -> None:
         ReplayBuffer.__init__(self, size, **kwargs)
@@ -32,6 +33,7 @@ class HERReplayBuffer(ReplayBuffer):
         self.reward_fn = reward_fn
         self.desired_goal_index = desired_goal_index
         self.achieved_goal_index = achieved_goal_index
+        self.max_reward = max_reward
 
     def sample(self, batch_size: int) -> Tuple[Batch, np.ndarray]:
         """Get a hindsight sample from buffer with size = batch_size.
@@ -46,28 +48,21 @@ class HERReplayBuffer(ReplayBuffer):
         # index of transitions to be replaced
         replace_idx = np.random.choice(batch_size, int(batch_size*self.future_p), replace=False)
         replace_indices = indices[replace_idx]
-        # print('origin:', transitions, 'index:', replace_idx)
         # get future goal
         future_length = transitions[replace_idx].info.future_length
-        future_goal_indices = np.random.randint(low = replace_indices, high = replace_indices + future_length + 1)
+        future_goal_indices = np.clip(np.random.randint(low = replace_indices, high = replace_indices + future_length + 1), 0, self.maxsize)
         # replace goal and reward
+        dones = np.logical_or(np.equal(transitions.rew[replace_idx],self.max_reward), transitions.done[replace_idx]).reshape(-1,1) # Attention! we use reward to judge if done
         obs_old = transitions.obs[replace_idx]
-        try: # use this to solve boundry problem
-            obs_future = self.obs[future_goal_indices]
-        except:
-            obs_future = obs_old
-        obs_new = np.concatenate((obs_old[:, :self.desired_goal_index], obs_future[:, self.achieved_goal_index:self.desired_goal_index]), axis = 1)
+        goal_future = self.obs[future_goal_indices][:, self.achieved_goal_index:self.desired_goal_index]*(1-dones) + obs_old[:, self.desired_goal_index:]*dones # if done, not replace
+        obs_new = np.concatenate((obs_old[:, :self.desired_goal_index], goal_future), axis = 1)
         transitions.obs[replace_idx] = obs_new
         obs_next_old = transitions.obs_next[replace_idx]
-        try:
-            obs_next_future = self.obs_next[future_goal_indices]
-        except:
-            obs_next_future = obs_next_old
-        obs_next_new = np.concatenate((obs_next_old[:, :self.desired_goal_index], obs_next_future[:, self.achieved_goal_index:self.desired_goal_index]), axis = 1)
+        goal_next_future = self.obs[future_goal_indices][:, self.achieved_goal_index:self.desired_goal_index]*(1-dones) + obs_next_old[:, self.desired_goal_index:]*dones # use this to aviod conflict in done
+        obs_next_new = np.concatenate((obs_next_old[:, :self.desired_goal_index], goal_next_future), axis = 1)
         transitions.obs_next[replace_idx] = obs_next_new
         for i, idx in enumerate(replace_idx):
-            transitions.rew[idx] = self.reward_fn(obs_new[i, self.achieved_goal_index:self.desired_goal_index], obs_new[i, self.desired_goal_index:], None)
-        # print('end:', obs_new[i, self.achieved_goal_index:self.desired_goal_index], obs_new[i, self.desired_goal_index:])
+            transitions.rew[idx] = self.reward_fn(obs_next_new[i, self.achieved_goal_index:self.desired_goal_index], obs_next_new[i, self.desired_goal_index:], None)
         return transitions, indices
 
 class HERVectorReplayBuffer(ReplayBufferManager):

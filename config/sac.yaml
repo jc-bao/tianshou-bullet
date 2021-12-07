@@ -1,41 +1,33 @@
 # environment
-env: FetchReach-v1
-action_type: continous
-grasp_mode: easy
+env: XarmReach-v0
 reward_type: sparse
-init_grasp_rate: 0.0
-goal_ground_rate: 0.0
-mode: static
-error: 0.1
-dim: 2
-vel: 0.2
-use_grasp: False
-init_grasp_rate: 0.0
-use_her: True
+use_her: False
+GUI: False
 seed: 0
+max_reward: 1 # max reward to judge if done
 
 # buffer
-buffer_size: 1000000 # 1000000
+buffer_size: 1000000
 replay_k: 4
 
 # network
-hidden_sizes: [256, 256]
+hidden_sizes: [64, 64]
 
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 16000 # warmup
+start_timesteps: 10240 # warmup
 epoch: 100 # save times
-step_per_epoch: 160000 # save interval (50repeat)
-step_per_collect: 3200 #(64path) after collect #, update
-update_per_step: 40 # repeat update time
+step_per_epoch: 102400 # save interval (50repeat)
+step_per_collect: 1024 #(64path) after collect #, update
+update_per_step: 0.04 # reuse time of steps
 estimation_step: 1 # look ahead time steps
-batch_size: 256 #256
+batch_size:  128
 
 # parallel
-device: cuda # cuda
-training_num: 4 # 64
-test_num: 1 # 16
+device: cuda
+training_num: 8
+test_num: 1
 
 # Algorithm
 alpha: 0.2 # entropy regularization coefficient
