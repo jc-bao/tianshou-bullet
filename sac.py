@@ -41,7 +41,7 @@ if __name__ == '__main__':
     def make_record_env(i):
         print(i)
         # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make('FetchPickAndPlace-v1')), video_folder = 'video/'+'foo'+str(i))
+        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make('FetchPickAndPlace-v1')), video_folder = 'log/video/'+'foo'+str(i))
     # env = gym.make(config['env'], config = config)
     env = gym.make('FetchPickAndPlace-v1')
     observation_space = env.observation_space
