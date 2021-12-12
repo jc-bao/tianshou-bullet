@@ -4,7 +4,6 @@ import time
 
 import numpy as np
 import torch
-from gym.spaces.utils import unflatten, flatten
 
 from tianshou.data import Collector
 from tianshou.env import BaseVectorEnv, DummyVectorEnv
@@ -35,7 +34,8 @@ class HERCollector(Collector):
         observation_space = None, 
         reward_fn = None,
         k = None,
-        fail_reward = None,
+        obs_rms = None,
+        strategy = 'offline'
     ) -> None:
         # assert env.is_async
         super().__init__(policy, env, buffer, preprocess_fn, exploration_noise)
@@ -43,7 +43,13 @@ class HERCollector(Collector):
         self.observation_space = observation_space
         self.reward_fn = reward_fn
         self.k = k
-        self.fail_reward = fail_reward
+        self.obs_rms = obs_rms
+        self.strategy = strategy
+        current_idx = 0
+        self.index_range = {}
+        for (key,s) in observation_space.spaces.items():
+            self.index_range[key] = np.arange(current_idx, current_idx+s.shape[0])
+            current_idx += s.shape[0]
 
     def collect(
         self,
@@ -180,42 +186,19 @@ class HERCollector(Collector):
                     traj_len = ep_len[env_id]
                     index_range = np.arange(env_buffer_len-traj_len, env_buffer_len) % len(env_buffer)
                     original_trajectory = env_buffer[index_range]
-                    for goal2end in range(self.k): # use different mid goal to resample
-                        goal2end = np.clip(goal2end, 0, traj_len-1)
-                        if goal2end > 0:
-                            trajectory = original_trajectory[:-goal2end]
-                        else:
-                            trajectory = original_trajectory
-                        final_obs = trajectory[-1].obs_next
-                        final_obs_dict = unflatten(self.observation_space, final_obs)
-                        new_goal = final_obs_dict['achieved_goal']
-                        # print('old trajectory:')
-                        # for data in env_buffer.obs:
-                        #     data = unflatten(self.observation_space, data)
-                        #     print(data['desired_goal'])
-                        for i, data in enumerate(trajectory): # add data back
-                            obs_dict = unflatten(self.observation_space, data['obs'])
-                            obs_dict['desired_goal'] = new_goal
-                            obs_new = flatten(self.observation_space, obs_dict)
-                            obs_next_dict = unflatten(self.observation_space, data['obs_next'])
-                            obs_next_dict['desired_goal'] = new_goal
-                            obs_next_new = flatten(self.observation_space, obs_next_dict)
-                            rew_new = self.reward_fn(obs_next_dict['achieved_goal'], obs_next_dict['desired_goal'], None)
-                            done_new = (i == (len(trajectory)-1))
-                            # if done_new: print(new_goal, obs_next_dict['achieved_goal'], final_obs_dict)
-                            # if (traj_len - goal2end == i + 1):
-                            #     obs_next_new = data['obs_next'] 
-                            data.update(
-                                obs = [obs_new],
-                                rew = [rew_new],
-                                done = [done_new], 
-                                obs_next = [obs_next_new]
-                            )
-                            self.buffer.add(data, [env_id])
-                        # print('new trajectory:')
-                        # for data in env_buffer.obs:
-                        #     data = unflatten(self.observation_space, data)
-                        #     print(data['desired_goal'])
+                    if self.strategy == 'offline':
+                            new_trajactory_len = np.random.choice(np.arange(1, traj_len+1), size = self.k , replace = False)
+                            for length in new_trajactory_len: # use different mid goal to resample
+                                trajectory = original_trajectory[:length].copy()
+                                new_goal = trajectory[length][self.index_range['achieved_goal']]
+                                trajectory.obs[:,self.index_range['desired_goal']] = new_goal
+                                trajectory.obs_next[:,self.index_range['desired_goal']] = new_goal
+                                trajectory.rew = self.reward_fn(trajectory.obs_next[:,self.index_range['achieved_goal']], new_goal, None)
+                                self.buffer.add(trajectory, [env_id])
+                    elif self.strategy == 'online':
+                        ag = original_trajectory.obs_next[:, self.index_range['achieved_goal']]
+                        for i, idx in enumerate(index_range):
+                            env_buffer.info.achieved_goal[idx] = ag[i:]
 
 
             self.data.obs = self.data.obs_next

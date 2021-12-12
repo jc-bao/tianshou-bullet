@@ -1,9 +1,8 @@
 import gym_xarm, yaml, gym, pybulletgym
 import datetime, os, pprint
 import numpy as np
-import gym_naive
-import robosuite as suite
-from robosuite.wrappers import GymWrapper
+from functools import partial
+
 
 import torch
 from torch import nn
@@ -12,7 +11,7 @@ from torch.distributions import Independent, Normal
 from torch.optim.lr_scheduler import LambdaLR
 
 from tianshou.env import SubprocVectorEnv, DummyVectorEnv
-from tianshou.utils.net.continuous import ActorProb, Critic
+from tianshou.utils.net.continuous import ActorProb, Critic, Actor
 from tianshou.utils.net.common import Net
 from tianshou.utils import TensorboardLogger
 from tianshou.policy import PPOPolicy
@@ -34,32 +33,25 @@ if __name__ == '__main__':
     make env
     '''
     def make_env():
-        env =  GymWrapper(suite.make(
-            env_name='TwoArmHandover', # try with other tasks like "Stack" and "Door"
-            robots=["Panda"]*2,  # try with other robots like "Sawyer" and "Jaco"
-            has_renderer=False,
-            has_offscreen_renderer=False,
-            use_object_obs=True,
-            use_camera_obs=False,
-            reward_shaping=True,
-            control_freq = 20,
-            controller_configs=suite.controllers.load_controller_config(default_controller='OSC_POSE'),
-            horizon = 500
-        )) # gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-        return env
-    env = make_env()
-    if config['use_her']:
-        state_shape = sum([len(s) for s in env.observation_space.spaces])
-    else:
-        state_shape = env.observation_space.shape 
-    action_shape = env.action_space.shape
-    max_action = env.action_space.high[0] or 1
+        # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+        return gym.wrappers.FlattenObservation(gym.make(config['env']))
+    def make_record_env(i):
+        # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make(config['env'])), video_folder = 'log/video/'+'foo'+str(i))
+    # env = gym.make(config['env'], config = config)
+    env = gym.make(config['env'])
+    observation_space = env.observation_space
+    env = gym.wrappers.FlattenObservation(env)
+    obs = env.reset()
+    state_shape = len(obs)
+    action_shape = env.action_space.shape or env.action_space.n
+    max_action = env.action_space.high[0]
     train_envs = SubprocVectorEnv(
         [make_env for _ in range(config['training_num'])],
         norm_obs = True
     )
     test_envs = SubprocVectorEnv(
-        [make_env for _ in range(config['test_num'])],
+        [partial(make_record_env, i) for i in range(config['test_num'])], 
         norm_obs = True,
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
@@ -80,13 +72,19 @@ if __name__ == '__main__':
         activation=nn.Tanh,
         device=config['device']
     )
-    actor = ActorProb(
+    actor = Actor(
         net_a,
         action_shape,
         max_action = max_action,
-        unbounded=True,
         device=config['device']
     ).to(config['device'])
+    # actor = ActorProb(
+    #     net_a,
+    #     action_shape,
+    #     max_action = max_action,
+    #     unbounded=True,
+    #     device=config['device']
+    # ).to(config['device'])
     net_c = Net(
         state_shape,
         hidden_sizes=config['hidden_sizes'],
@@ -95,13 +93,14 @@ if __name__ == '__main__':
     )
     critic = Critic(net_c, device=config['device']).to(config['device'])
     # init parameters
-    torch.nn.init.constant_(actor.sigma_param, -0.5)
+    # torch.nn.init.constant_(actor.sigma_param, -0.5)
     for m in list(actor.modules()) + list(critic.modules()):
         if isinstance(m, torch.nn.Linear):
             # orthogonal initialization
             torch.nn.init.orthogonal_(m.weight, gain=np.sqrt(2))
             torch.nn.init.zeros_(m.bias)
-    for m in actor.mu.modules():
+    # for m in actor.mu.modules():
+    for m in actor.last.modules():
         if isinstance(m, torch.nn.Linear):
             torch.nn.init.zeros_(m.bias)
             m.weight.data.copy_(0.01 * m.weight.data)
@@ -124,8 +123,10 @@ if __name__ == '__main__':
     set up policy
     '''
     # distribution function to get action
-    def dist(*logits):
-        return Independent(Normal(*logits), 1)
+    # def dist(*logits):
+    #     return Independent(Normal(*logits), 1)
+    def dist(logits):
+        return Independent(Normal(loc = logits, scale = 0.6), 1)
     policy = PPOPolicy(
         actor,
         critic,

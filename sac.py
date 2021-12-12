@@ -26,9 +26,13 @@ if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config/sac_debug.yaml", "r") as stream:
+    with open("config/pnp_dai.yaml", "r") as stream:
         try:
             config = yaml.safe_load(stream)
+            if config['render']:
+                config['test_num'] = 1
+                config['train_num'] = 1
+                config['norm_obs'] = False
         except yaml.YAMLError as exc:
             print(exc)
 
@@ -37,13 +41,12 @@ if __name__ == '__main__':
     '''
     def make_env():
         # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-        return gym.wrappers.FlattenObservation(gym.make('FetchPickAndPlace-v1'))
+        return gym.wrappers.FlattenObservation(gym.make(config['env']))
     def make_record_env(i):
-        print(i)
         # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make('FetchPickAndPlace-v1')), video_folder = 'log/video/'+'foo'+str(i))
+        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make(config['env'])), video_folder = 'log/video/'+'foo'+str(i), episode_trigger = lambda x: True)
     # env = gym.make(config['env'], config = config)
-    env = gym.make('FetchPickAndPlace-v1')
+    env = gym.make(config['env'])
     observation_space = env.observation_space
     env = gym.wrappers.FlattenObservation(env)
     obs = env.reset()
@@ -51,11 +54,11 @@ if __name__ == '__main__':
     action_shape = env.action_space.shape or env.action_space.n
     train_envs = SubprocVectorEnv(
         [make_env for _ in range(config['training_num'])],
-        norm_obs = True
+        norm_obs = config['norm_obs']
     )
     test_envs = SubprocVectorEnv(
         [partial(make_record_env, i) for i in range(config['test_num'])], 
-        norm_obs = True,
+        norm_obs = config['norm_obs'],
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
     )
@@ -124,7 +127,10 @@ if __name__ == '__main__':
     )
     # load policy
     if config['resume_path']:
-        policy.load_state_dict(torch.load(config['resume_path'], map_location=config['device']))
+        data = torch.load(config['resume_path'])
+        train_envs.obs_rms.mean = data['mean']
+        train_envs.obs_rms.var = data['var']
+        policy.load_state_dict(data['policy'], map_location=config['device'])
         print("Loaded agent from: ", config['resume_path'])
 
     '''
@@ -134,9 +140,14 @@ if __name__ == '__main__':
         buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
     else:
         buffer = ReplayBuffer(config['buffer_size'])
-    train_collector = HERCollector(policy, train_envs, buffer, exploration_noise=True, observation_space = observation_space, reward_fn = env.compute_reward, k = config['replay_k'], fail_reward = config['fail_reward'])
-    # train_collector = Collector(policy, train_envs, buffer, exploration_noise=True)
+    if config['use_her']:
+        train_collector = HERCollector(policy, train_envs, buffer, exploration_noise=True, observation_space = observation_space, reward_fn = env.compute_reward, k = config['replay_k'])
+    else:
+        train_collector = Collector(policy, train_envs, buffer, exploration_noise=True)
     test_collector = Collector(policy, test_envs)
+    if config['render']:
+        test_collector.collect(n_step=config['render_timesteps'])
+        quit()
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)
 
@@ -151,22 +162,13 @@ if __name__ == '__main__':
     logger = TensorboardLogger(writer, update_interval=100, train_interval=100)
     # save function
     def save_fn(policy):
-        torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
-        # save render data
-        '''
-        obs = env.reset()
-        done = False
-        while not done:
-            obs = np.array(list(obs.values())).flatten()
-            data = Batch(
-                obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
-            )
-            with torch.no_grad():  # faster than retain_grad version
-                result = policy(data, None)
-            action_remap = policy.map_action(result.act)
-            obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
-            env.render(mode = 'tensorboard', writer = writer)
-        '''
+        data = {
+            'obs_mean': train_envs.obs_rms.mean,
+            'obs_var': train_envs.obs_rms.var,
+            'policy': policy.state_dict()
+        }
+        torch.save(data, os.path.join(log_path, 'policy.pth'))
+        
         
     '''
     trainer

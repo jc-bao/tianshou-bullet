@@ -1,5 +1,5 @@
 # environment
-env: TwoArmHandover #XarmReach-v1
+env: FetchReach-v1
 init_grasp_rate: 0.5
 goal_ground_rate: 0.5
 action_type: continous
@@ -10,32 +10,32 @@ save_render: False
 seed: 0
 
 # buffer
-buffer_size: 256000
+buffer_size: 16384
 
 # network
-hidden_sizes: [256, 256]
+hidden_sizes: [64, 64]
 
 # train
-lr: 3.0e-4
-epoch: 100
-step_per_epoch: 25600000
-step_per_collect: 256000 # the number of transitions the collector would collect before the network update
-batch_size: 8000
+lr: 2.5e-4
+epoch: 10
+step_per_epoch: 163840
+step_per_collect: 16384 # the number of transitions the collector would collect before the network update
+batch_size: 512
 repeat_per_collect: 10 # the number of repeat time for policy learning for each batch
 
 # parallel
 device: cuda # cuda
-training_num: 64 # 64
-test_num: 10 # 10
+training_num: 64
+test_num: 10
 
 # PPO
 rew_norm: True
-vf_coef: 0.25 # [Q] weight for value loss
-ent_coef: 0.0 # [Q] weight for entropy loss
+vf_coef: 0.5 # [Q] weight for value loss
+ent_coef: 0.01 # [Q] weight for entropy loss
 gamma: 0.99
 gae_lambda: 0.95
 bound_action_method: clip
-lr_decay: True
+lr_decay: False
 max_grad_norm: 0.5
 eps_clip: 0.2 
 dual_clip: null # [Q]

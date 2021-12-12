@@ -117,17 +117,18 @@ def offpolicy_trainer(
                 env_step += int(result["n/st"])
                 t.update(result["n/st"])
                 logger.log_train_data(result, env_step)
-                logger.write("train/env_step", env_step, {"train/succeed": result["succeed"].mean()})  # CHANGE add success record 
                 last_rew = result['rew'] if 'rew' in result else last_rew
                 last_len = result['len'] if 'len' in result else last_len
                 data = {
                     "env_step": str(env_step),
-                    "succeed": f"{result['succeed'].mean():.2f}", # CHANGE add success record
                     "rew": f"{last_rew:.2f}",
                     "len": str(int(last_len)),
                     "n/ep": str(int(result["n/ep"])),
                     "n/st": str(int(result["n/st"])),
                 }
+                if 'succeed' in result.keys(): # CHANGE add succeed
+                    logger.write("train/env_step", env_step, {"train/succeed": result["succeed"].mean()})  # CHANGE add success record 
+                    data['succeed'] = f"{result['succeed'].mean():.2f}"
                 if result["n/ep"] > 0:
                     if test_in_train and stop_fn and stop_fn(result["rew"]):
                         test_result = test_episode(

@@ -18,12 +18,14 @@ from tianshou.policy import PPOPolicy
 from tianshou.trainer import onpolicy_trainer
 from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer
 
+from functools import partial
+
 # Note: do not remove __main__ as it will use multi-process
 if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config/ppo_arm.yaml", "r") as stream:
+    with open("config/pnp_dai.yaml", "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -38,15 +40,14 @@ if __name__ == '__main__':
     action_shape = env.action_space.shape or env.action_dim
     max_action = env.action_space.high[0]
     env.close()
+    def make_record_env(i):
+        # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make(config['env'])), video_folder = 'log/video/'+'render'+str(i))
     test_envs = DummyVectorEnv(
-        # [lambda: gym.make(config['env'], config=config)],
-        [lambda:  gym.wrappers.FlattenObservation(BimanualHandover(enable_GUI = True))],
+        [partial(make_record_env, i) for i in range(config['test_num'])], 
         norm_obs = True,
         update_obs_rms = False
     )
-    np.random.seed(config['seed'])
-    torch.manual_seed(config['seed'])
-    test_envs.seed(config['seed'])
 
     '''
     build and init network
