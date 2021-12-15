@@ -1,14 +1,17 @@
 # environment
-info: Norm_obs Off,offline Replay k=4, 3200 collect,Use SB her parameters to train Reach
-env: FetchReach-v1
+info: use_PER
+env: PandaReach-v2
 reward_type: sparse
 use_her: True
 norm_obs: False
 seed: 5
 strategy: offline
+curriculum: False
 
 # buffer
-# buffer_size: 16000000
+use_PER: True
+per_alpha: 0.7
+per_beta: 0.5
 buffer_size: 1000000
 replay_k: 4
 
@@ -18,7 +21,7 @@ hidden_sizes: [64, 64]
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 32000 # warmup
+start_timesteps: 3200 # warmup
 epoch: 10 # save times
 step_per_epoch: 320000 # save interval (50repeat)
 step_per_collect: 3200 #(64path) after collect #, update

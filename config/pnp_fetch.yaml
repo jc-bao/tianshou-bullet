@@ -1,16 +1,16 @@
 # environment
-info: Online Replay k=4, Dai Tianhong, reuse=0.1
+info: Panda Use smart update time
 env: FetchPickAndPlace-v1
-dim: 2
 reward_type: sparse
 use_her: True
-norm_obs: True
+norm_obs: False
 seed: 5
-strategy: 'online'
+strategy: offline
+curriculum: False
 
 # buffer
-buffer_size: 32000000
-replay_k: 4
+buffer_size: 6400000
+replay_k: 8
 
 # network
 hidden_sizes: [256, 256]
@@ -18,9 +18,9 @@ hidden_sizes: [256, 256]
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 32000 # warmup
+start_timesteps: 64000 # warmup
 epoch: 100 # save times
-step_per_epoch: 640000 # save interval (50repeat)
+step_per_epoch: 64000 # save interval (50repeat)
 step_per_collect: 6400 #(64path) after collect #, update
 update_per_step: 0.1 # repeat update time
 estimation_step: 1 # look ahead time steps

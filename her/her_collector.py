@@ -46,9 +46,9 @@ class HERCollector(Collector):
         self.obs_rms = obs_rms
         self.strategy = strategy
         current_idx = 0
-        self.index_range = {}
+        self.obs_index_range = {}
         for (key,s) in observation_space.spaces.items():
-            self.index_range[key] = np.arange(current_idx, current_idx+s.shape[0])
+            self.obs_index_range[key] = np.arange(current_idx, current_idx+s.shape[0])
             current_idx += s.shape[0]
 
     def collect(
@@ -187,16 +187,19 @@ class HERCollector(Collector):
                     index_range = np.arange(env_buffer_len-traj_len, env_buffer_len) % len(env_buffer)
                     original_trajectory = env_buffer[index_range]
                     if self.strategy == 'offline':
-                            new_trajactory_len = np.random.choice(np.arange(1, traj_len+1), size = self.k , replace = False)
+                            new_trajactory_len = (np.random.random(size=self.k)*traj_len).astype(int)+1
                             for length in new_trajactory_len: # use different mid goal to resample
-                                trajectory = original_trajectory[:length].copy()
-                                new_goal = trajectory[length][self.index_range['achieved_goal']]
-                                trajectory.obs[:,self.index_range['desired_goal']] = new_goal
-                                trajectory.obs_next[:,self.index_range['desired_goal']] = new_goal
-                                trajectory.rew = self.reward_fn(trajectory.obs_next[:,self.index_range['achieved_goal']], new_goal, None)
-                                self.buffer.add(trajectory, [env_id])
+                                trajectory = Batch(original_trajectory[:length], copy = True)
+                                new_goal = trajectory.obs_next[length-1, self.obs_index_range['achieved_goal']]
+                                new_goals = np.repeat([new_goal], length, axis=0)
+                                trajectory.obs[:,self.obs_index_range['desired_goal']] = new_goals
+                                trajectory.obs_next[:,self.obs_index_range['desired_goal']] = new_goals
+                                trajectory.rew = self.reward_fn(trajectory.obs_next[:,self.obs_index_range['achieved_goal']], new_goals, None)
+                                trajectory.done[-1] = True
+                                for transition in trajectory:
+                                    env_buffer.add(transition)
                     elif self.strategy == 'online':
-                        ag = original_trajectory.obs_next[:, self.index_range['achieved_goal']]
+                        ag = original_trajectory.obs_next[:, self.obs_index_range['achieved_goal']]
                         for i, idx in enumerate(index_range):
                             env_buffer.info.achieved_goal[idx] = ag[i:]
 

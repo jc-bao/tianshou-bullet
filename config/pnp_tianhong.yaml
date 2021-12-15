@@ -1,42 +1,42 @@
 # environment
-info: Norm_obs Off,offline Replay k=4, 3200 collect,Use SB her parameters to train Reach
-env: FetchReach-v1
-reward_type: sparse
+info: (update:collect more data before update) Use SB03 her parameters to train Pick And Place
+env: FetchPickAndPlace-v1
+seed: 5
 use_her: True
 norm_obs: False
 seed: 5
-strategy: offline
+strategy: online
+curriculum: False
 
 # buffer
-# buffer_size: 16000000
-buffer_size: 1000000
+buffer_size: 32000000
 replay_k: 4
 
 # network
-hidden_sizes: [64, 64]
+hidden_sizes: [256,256]
 
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 32000 # warmup
-epoch: 10 # save times
-step_per_epoch: 320000 # save interval (50repeat)
-step_per_collect: 3200 #(64path) after collect #, update
-update_per_step: 1 # repeat update time
+start_timesteps: 6400 # warmup
+epoch: 100 # save times
+step_per_epoch: 640000 # save interval (50repeat)
+step_per_collect: 6400 #(64path) after collect #, update
+update_per_step: 0.4 # repeat update time
 estimation_step: 1 # look ahead time steps
 batch_size: 256
 
 # parallel
 device: cuda # cuda
-training_num: 64
-test_num: 8
+training_num: 64 # 2
+test_num: 10
 
 # Algorithm
 alpha: 0.2 # entropy regularization coefficient
 auto_alpha: True
 alpha_lr: 0.0003 # works if open auto alpha
-tau: 0.005
-gamma: 0.95
+tau: 0.05
+gamma: 0.98
 
 # dir
 logdir: log

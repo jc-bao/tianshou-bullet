@@ -1,30 +1,30 @@
 # environment
-info: Norm_obs Off,offline Replay k=4, 3200 collect,Use SB her parameters to train Reach
-env: FetchReach-v1
+info: Train 2 PickAndPlace(no auto sample, add norm trick)
+env: PandaPickAndPlace2-v2
 reward_type: sparse
 use_her: True
 norm_obs: False
 seed: 5
 strategy: offline
+curriculum: False
 
 # buffer
-# buffer_size: 16000000
-buffer_size: 1000000
-replay_k: 4
+buffer_size: 12800000 # will be full after ~10 epoch
+replay_k: 8
 
 # network
-hidden_sizes: [64, 64]
+hidden_sizes: [256, 256]
 
 # train
 actor_lr: 1.0e-3
 critic_lr: 1.0e-3
-start_timesteps: 32000 # warmup
-epoch: 10 # save times
-step_per_epoch: 320000 # save interval (50repeat)
-step_per_collect: 3200 #(64path) after collect #, update
-update_per_step: 1 # repeat update time
+start_timesteps: 64000 # warmup
+epoch: 100 # save times
+step_per_epoch: 128000 # save interval (50repeat)
+step_per_collect: 6400 #(64path) after collect #, update
+update_per_step: 0.1 # repeat update time
 estimation_step: 1 # look ahead time steps
-batch_size: 256
+batch_size: 4096
 
 # parallel
 device: cuda # cuda
@@ -45,4 +45,5 @@ save_render: False
 
 # render
 watch_train: False # if show demo directly
-render: 0.00 # render time rate
+render: 0 # render time rate
+render_timesteps: 100 # render time rate

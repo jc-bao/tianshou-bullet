@@ -31,6 +31,7 @@ def offpolicy_trainer(
     logger: BaseLogger = LazyLogger(),
     verbose: bool = True,
     test_in_train: bool = True,
+    curriculum: bool = True
 ) -> Dict[str, Union[float, str]]:
     """A wrapper for off-policy trainer procedure.
 
@@ -101,6 +102,8 @@ def offpolicy_trainer(
     if save_fn:
         save_fn(policy)
 
+    # CHANGE
+    same_side_rate = 1
     for epoch in range(1 + start_epoch, 1 + max_epoch):
         # train
         policy.train()
@@ -148,7 +151,10 @@ def offpolicy_trainer(
                             )
                         else:
                             policy.train()
-                for _ in range(round(update_per_step * result["n/st"])):
+                # CHANGE change update times before the buffer are full
+                # update_times = round(update_per_step * result["n/st"]*len(train_collector.buffer)/train_collector.buffer.maxsize)
+                update_times = round(update_per_step * result["n/st"])
+                for _ in range(update_times): 
                     gradient_step += 1
                     losses = policy.update(batch_size, train_collector.buffer)
                     for k in losses.keys():
@@ -159,6 +165,12 @@ def offpolicy_trainer(
                     t.set_postfix(**data)
             if t.n <= t.total:
                 t.update()
+            # CHANGE
+            if curriculum and (result['succeed'].mean()>0) and same_side_rate>0:
+                same_side_rate -= 0.2
+                print('Change same_side_rate to', same_side_rate)
+                for worker in train_collector.env.workers:
+                    worker.parent_remote.send(['change', {'same_side_rate':same_side_rate}])
         # test
         test_result = test_episode(
             policy, test_collector, test_fn, epoch, episode_per_test, logger, env_step,

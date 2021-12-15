@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer, Batch
+from tianshou.data import Collector, ReplayBuffer, VectorReplayBuffer, PrioritizedReplayBuffer, PrioritizedVectorReplayBuffer
 from tianshou.env import SubprocVectorEnv, DummyVectorEnv
 from tianshou.policy import SACPolicy
 from tianshou.utils import TensorboardLogger
@@ -22,12 +22,16 @@ import time
 from functools import partial
 from her.sac_her_policy import SACHERPolicy
 from her.her_collector import HERCollector
+import panda_gym
 
 if __name__ == '__main__':
     '''
     load param
     '''
-    with open("config/pnp_dai.yaml", "r") as stream:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, default='pnp_tianhong', help='the config file name')
+    args = parser.parse_args()
+    with open('config/'+args.config+'.yaml', "r") as stream:
         try:
             config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -53,6 +57,16 @@ if __name__ == '__main__':
         [make_env for _ in range(config['training_num'])],
         norm_obs = config['norm_obs']
     )
+    if config['norm_obs']:
+        print('updating env norm...')
+        train_envs.reset()
+        for _ in range(1000):
+            _,_,done,_ = train_envs.step([env.action_space.sample() for _ in range(config['training_num'])])
+            if np.any(done):
+                env_ind = np.where(done)[0]
+                train_envs.reset(env_ind)
+        print('updating done!')
+        train_envs.update_obs_rms = False
     test_envs = SubprocVectorEnv(
         [partial(make_record_env, i) for i in range(config['test_num'])], 
         norm_obs = config['norm_obs'],
@@ -125,6 +139,7 @@ if __name__ == '__main__':
         dict_observation_space = observation_space,
         reward_fn = env.compute_reward, 
         future_k = config['replay_k'],
+        strategy = config['strategy']
     )
     # load policy
     if config['resume_path']:
@@ -135,19 +150,26 @@ if __name__ == '__main__':
     set up collector
     '''
     if config['training_num'] > 1:
-        buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
+        if config['use_PER']:
+            buffer = PrioritizedVectorReplayBuffer(total_size = config['buffer_size'], buffer_num= len(train_envs), alpha = config['per_alpha'], beta = config['per_beta'])
+        else:
+            buffer = VectorReplayBuffer(config['buffer_size'], len(train_envs))
     else:
-        buffer = ReplayBuffer(config['buffer_size'])
+        if config['use_PER']:
+            buffer = PrioritizedReplayBuffer(size = config['buffer_size'], alpha = config['per_alpha'], beta = config['per_beta'])
+        else:
+            buffer = ReplayBuffer(config['buffer_size'])
     train_collector = HERCollector(policy, train_envs, buffer, exploration_noise=True, observation_space = observation_space, reward_fn = env.compute_reward, k = config['replay_k'], strategy=config['strategy'])
     test_collector = Collector(policy, test_envs)
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)
+    # [CHANGE fix the std and mean]
+    # train_envs.update_obs_rms = False
 
     '''
     logger
     '''
-    t0 = datetime.datetime.now().strftime("%m%d_%H%M%S")
-    log_file = 'seed_'+str(config['seed'])+'_'+t0+'_'+config['env']+'_sac'
+    log_file = config['info']
     log_path = os.path.join(config['logdir'], config['env'], 'sac', log_file)
     writer = SummaryWriter(log_path)
     writer.add_text("args", str(config))
@@ -187,6 +209,7 @@ if __name__ == '__main__':
         save_fn=save_fn,
         logger=logger,
         update_per_step=config['update_per_step'],
-        test_in_train=False
+        test_in_train=False,
+        curriculum=config['curriculum']
     )
     pprint.pprint(result)

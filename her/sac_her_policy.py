@@ -36,6 +36,7 @@ class SACHERPolicy(SACPolicy):
         reward_fn = None, 
         future_k: float = 4,
         max_episode_length = 50,
+        strategy = 'offline',
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -43,6 +44,7 @@ class SACHERPolicy(SACPolicy):
             tau, gamma, alpha, reward_normalization, estimation_step, exploration_noise, deterministic_eval, **kwargs
         )
         self.future_k = future_k
+        self.strategy = strategy
         self.future_p = 1 - (1. / (1 + future_k))
         self.reward_fn = reward_fn
         self.max_episode_length = max_episode_length
@@ -55,6 +57,8 @@ class SACHERPolicy(SACPolicy):
             current_idx += s.shape[0]
 
     def process_fn(self, batch: Batch, buffer: ReplayBuffer, indices: np.ndarray) -> Batch:
+        if self.strategy == 'offline':
+            return super(SACHERPolicy, self).process_fn(batch, buffer, indices)
         assert not self._rew_norm, \
             "Reward normalization in computing n-step returns is unsupported now."
         end_flag = buffer.done.copy()
