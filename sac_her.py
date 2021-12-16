@@ -29,7 +29,7 @@ if __name__ == '__main__':
     load param
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='reach_fetch', help='the config file name')
+    parser.add_argument('--config', type=str, default='reach_fetch', help='config file name')
     args = parser.parse_args()
     with open('config/'+args.config+'.yaml', "r") as stream:
         try:
@@ -41,12 +41,12 @@ if __name__ == '__main__':
     make env
     '''
     def make_env():
-        # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
         return gym.wrappers.FlattenObservation(gym.make(config['env']))
-    def make_record_env(i):
-        # return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
-        return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make(config['env'])), video_folder = 'log/video/'+'bar'+str(i))
-    # env = gym.make(config['env'], config = config)
+    def make_test_env(i):
+        if config['record_test']:
+            return gym.wrappers.FlattenObservation(gym.make(config['env'], config = config))
+        else:
+            return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make(config['env'])), video_folder = 'log/'+config['env']+'/video'+str(i), episode_trigger=lambda x: True)
     env = gym.make(config['env'])
     dict_observation_space = env.observation_space
     env = gym.wrappers.FlattenObservation(env)
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         print('updating done!')
         train_envs.update_obs_rms = False
     test_envs = SubprocVectorEnv(
-        [partial(make_record_env, i) for i in range(config['test_num'])], 
+        [partial(make_test_env, i) for i in range(config['test_num'])], 
         norm_obs = config['norm_obs'],
         obs_rms=train_envs.obs_rms,
         update_obs_rms = False
@@ -172,8 +172,6 @@ if __name__ == '__main__':
     test_collector = Collector(policy, test_envs)
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)
-    # [CHANGE fix the std and mean]
-    # train_envs.update_obs_rms = False
 
     '''
     logger
@@ -186,21 +184,6 @@ if __name__ == '__main__':
     # save function
     def save_fn(policy):
         torch.save(policy.state_dict(), os.path.join(log_path, 'policy.pth'))
-        # save render data
-        '''
-        obs = env.reset()
-        done = False
-        while not done:
-            obs = np.array(list(obs.values())).flatten()
-            data = Batch(
-                obs=[obs], act={}, rew={}, done={}, obs_next={}, info={}, policy={}
-            )
-            with torch.no_grad():  # faster than retain_grad version
-                result = policy(data, None)
-            action_remap = policy.map_action(result.act)
-            obs, rew, done, info = env.step(action_remap[0].detach().cpu().numpy())
-            env.render(mode = 'tensorboard', writer = writer)
-        '''
         
     '''
     trainer
