@@ -9,6 +9,7 @@ strategy: online
 curriculum: False
 
 # buffer
+use_PER: False
 buffer_size: 32000000
 replay_k: 4
 

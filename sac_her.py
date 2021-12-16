@@ -29,7 +29,7 @@ if __name__ == '__main__':
     load param
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='pnp_tianhong', help='the config file name')
+    parser.add_argument('--config', type=str, default='reach_fetch', help='the config file name')
     args = parser.parse_args()
     with open('config/'+args.config+'.yaml', "r") as stream:
         try:
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         return gym.wrappers.RecordVideo(gym.wrappers.FlattenObservation(gym.make(config['env'])), video_folder = 'log/video/'+'bar'+str(i))
     # env = gym.make(config['env'], config = config)
     env = gym.make(config['env'])
-    observation_space = env.observation_space
+    dict_observation_space = env.observation_space
     env = gym.wrappers.FlattenObservation(env)
     obs = env.reset()
     state_shape = len(obs)
@@ -136,7 +136,7 @@ if __name__ == '__main__':
         estimation_step=config['estimation_step'],
         action_space=env.action_space,
         reward_normalization = False,
-        dict_observation_space = observation_space,
+        dict_observation_space = dict_observation_space,
         reward_fn = env.compute_reward, 
         future_k = config['replay_k'],
         strategy = config['strategy']
@@ -159,7 +159,16 @@ if __name__ == '__main__':
             buffer = PrioritizedReplayBuffer(size = config['buffer_size'], alpha = config['per_alpha'], beta = config['per_beta'])
         else:
             buffer = ReplayBuffer(config['buffer_size'])
-    train_collector = HERCollector(policy, train_envs, buffer, exploration_noise=True, observation_space = observation_space, reward_fn = env.compute_reward, k = config['replay_k'], strategy=config['strategy'])
+    train_collector = HERCollector(
+        policy = policy, 
+        env = train_envs, 
+        buffer = buffer, 
+        exploration_noise=True, 
+        dict_observation_space = dict_observation_space, 
+        reward_fn = env.compute_reward, 
+        replay_k = config['replay_k'], 
+        strategy=config['strategy']
+    )
     test_collector = Collector(policy, test_envs)
     # warm up
     train_collector.collect(n_step=config['start_timesteps'], random=True)

@@ -8,6 +8,7 @@ seed: 5
 strategy: offline
 
 # buffer
+use_PER: False
 buffer_size: 1000000
 replay_k: 8
 
@@ -27,8 +28,8 @@ batch_size: 256
 
 # parallel
 device: cuda # cuda
-training_num: 64
-test_num: 8
+training_num: 2
+test_num: 2
 
 # Algorithm
 alpha: 0.2 # entropy regularization coefficient
